@@ -1,0 +1,1 @@
+X:\dev\SeixalRiscalMonitor\src\GeoRisk.API\.sonarqube\out\0

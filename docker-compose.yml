@@ -1,0 +1,95 @@
+services:
+  georisk-db:
+    image: postgis/postgis:17-3.5
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: georisk
+      POSTGRES_USER: georisk
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-georisk_dev_2024}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U georisk"]
+      interval: 5s
+      retries: 5
+
+  georisk-redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  georisk-api:
+    build:
+      context: .
+      dockerfile: src/GeoRisk.API/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=georisk-db;Database=georisk;Username=georisk;Password=${DB_PASSWORD:-georisk_dev_2024}
+      - Redis__ConnectionString=georisk-redis:6379
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      georisk-db:
+        condition: service_healthy
+      georisk-redis:
+        condition: service_healthy
+
+  georisk-web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    depends_on:
+      georisk-api:
+        condition: service_started
+
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9001:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar_pass}
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status || exit 1"]
+      interval: 15s
+      retries: 10
+      start_period: 60s
+
+  sonarqube-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: sonar
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD:-sonar_pass}
+    volumes:
+      - sonarqube_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar"]
+      interval: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonarqube_db:

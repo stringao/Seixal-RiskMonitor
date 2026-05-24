@@ -1,0 +1,50 @@
+using GeoRisk.API.Common.CQRS;
+using GeoRisk.API.Features.Risk.Dto;
+
+using GeoRisk.API.Infrastructure.Services;
+namespace GeoRisk.API.Features.Risk;
+
+public sealed record CalculateRiskCommand(Guid? ZoneId) : ICommand<CalculateRiskResponse>;
+
+public sealed class CalculateRiskHandler(GeoRiskDbContext db, RiskCalculationService calc)
+    : ICommandHandler<CalculateRiskCommand, CalculateRiskResponse>
+{
+    public async Task<CalculateRiskResponse> HandleAsync(CalculateRiskCommand cmd, CancellationToken ct)
+    {
+        var zones = cmd.ZoneId.HasValue
+            ? await db.RiskZones.Where(z => z.Id == cmd.ZoneId.Value).ToListAsync(ct)
+            : await db.RiskZones.ToListAsync(ct);
+
+        var scores = await calc.CalculateZoneScoresAsync(db, ct);
+
+        var updated = DateTime.UtcNow;
+        foreach (var zone in zones)
+        {
+            zone.RiskLevel = calc.ScoreToRiskLevel(scores.GetValueOrDefault(zone.Id, 0));
+            zone.CalculatedAt = updated;
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        var responses = zones.Select(z => new RiskZoneResponse(
+            z.Id, z.Name, z.Geometry.AsText(),
+            calc.ScoreToRiskLevel(scores.GetValueOrDefault(z.Id, 0)),
+            Math.Round(scores.GetValueOrDefault(z.Id, 0), 2),
+            updated)).ToList();
+
+        return new CalculateRiskResponse(responses, updated);
+    }
+}
+
+public static class CalculateRiskEndpoint
+{
+    public static RouteGroupBuilder MapCalculateRisk(this RouteGroupBuilder group)
+    {
+        group.MapPost("/calculate", async (
+            CalculateRiskCommand cmd,
+            ICommandHandler<CalculateRiskCommand, CalculateRiskResponse> h) =>
+            Results.Ok(await h.HandleAsync(cmd, default)))
+            .RequireAuthorization("AdminOnly");
+        return group;
+    }
+}
