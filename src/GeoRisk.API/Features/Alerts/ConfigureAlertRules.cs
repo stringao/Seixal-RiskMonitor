@@ -20,13 +20,12 @@ public sealed class ConfigureAlertRulesHandler(
 {
     public async Task<AlertRuleResponse> HandleAsync(ConfigureAlertRulesCommand command, CancellationToken ct)
     {
-        var ruleId = command.RuleId!.Value;
         return command.Action switch
         {
             ConfigureAlertRulesAction.Create => await CreateRuleAsync(command.CreateRequest!, ct),
-            ConfigureAlertRulesAction.Update => await UpdateRuleAsync(ruleId, command.UpdateRequest!, ct),
-            ConfigureAlertRulesAction.Delete => await DeleteRuleAsync(ruleId, ct),
-            ConfigureAlertRulesAction.ToggleActive => await ToggleActiveAsync(ruleId, ct),
+            ConfigureAlertRulesAction.Update => await UpdateRuleAsync(command.RuleId!.Value, command.UpdateRequest!, ct),
+            ConfigureAlertRulesAction.Delete => await DeleteRuleAsync(command.RuleId!.Value, ct),
+            ConfigureAlertRulesAction.ToggleActive => await ToggleActiveAsync(command.RuleId!.Value, ct),
             _ => throw new ArgumentOutOfRangeException(nameof(command.Action))
         };
     }
@@ -36,7 +35,14 @@ public sealed class ConfigureAlertRulesHandler(
         Polygon? area = null;
         if (!string.IsNullOrWhiteSpace(request.AreaWkt))
         {
-            area = (Polygon)new NetTopologySuite.IO.WKTReader().Read(request.AreaWkt);
+            try
+            {
+                area = (Polygon)new NetTopologySuite.IO.WKTReader().Read(request.AreaWkt);
+            }
+            catch
+            {
+                throw new InvalidOperationException("Invalid WKT geometry format");
+            }
         }
 
         var rule = new AlertRule
@@ -69,7 +75,7 @@ public sealed class ConfigureAlertRulesHandler(
         {
             rule.Area = string.IsNullOrWhiteSpace(request.AreaWkt)
                 ? null
-                : (Polygon)new NetTopologySuite.IO.WKTReader().Read(request.AreaWkt);
+                : TryParseWkt(request.AreaWkt);
         }
         if (request.IsActive.HasValue) rule.IsActive = request.IsActive.Value;
 
@@ -101,6 +107,18 @@ public sealed class ConfigureAlertRulesHandler(
 
     private static AlertRuleResponse ToResponse(AlertRule r) =>
         new(r.Id, r.Name, r.EventType, r.SeverityThreshold, r.Area?.AsText(), r.IsActive, r.CreatedAt);
+
+    private static Polygon TryParseWkt(string wkt)
+    {
+        try
+        {
+            return (Polygon)new NetTopologySuite.IO.WKTReader().Read(wkt);
+        }
+        catch
+        {
+            throw new InvalidOperationException("Invalid WKT geometry format");
+        }
+    }
 }
 
 public static class ConfigureAlertRulesEndpoint
@@ -143,10 +161,12 @@ public sealed record ConfigureAlertRulesRequest(
     CreateAlertRuleRequest? CreateRequest,
     UpdateAlertRuleRequest? UpdateRequest)
 {
-    public ConfigureAlertRulesCommand ToCommand() =>
-        new(
-            Enum.Parse<ConfigureAlertRulesAction>(Action, ignoreCase: true),
-            RuleId,
-            CreateRequest,
-            UpdateRequest);
+    public ConfigureAlertRulesCommand ToCommand()
+    {
+        if (!Enum.TryParse<ConfigureAlertRulesAction>(Action, ignoreCase: true, out var action))
+        {
+            throw new InvalidOperationException($"Invalid action: {Action}");
+        }
+        return new ConfigureAlertRulesCommand(action, RuleId, CreateRequest, UpdateRequest);
+    }
 }

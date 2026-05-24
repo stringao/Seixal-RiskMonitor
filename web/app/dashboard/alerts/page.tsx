@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAlerts } from "@/lib/hooks/useAlerts";
 import { AlertList } from "@/components/alerts/AlertList";
-import { AlertBadge } from "@/components/alerts/AlertBadge";
-import { Bell, Settings } from "lucide-react";
+import type { AlertSeverity } from "@/lib/types/alert";
+import { Settings } from "lucide-react";
 
 export default function AlertsPage() {
-  const [severityFilter, setSeverityFilter] = useState<string>("");
+  const [severityFilter, setSeverityFilter] = useState<AlertSeverity | "">("");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const { data, loading, markRead, refresh } = useAlerts({
-    severity: severityFilter as never,
+    severity: severityFilter || undefined,
     isRead: showUnreadOnly ? false : undefined,
   });
 
@@ -36,7 +36,7 @@ export default function AlertsPage() {
       <div className="flex items-center gap-4">
         <select
           value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
+          onChange={(e) => setSeverityFilter(e.target.value as AlertSeverity)}
           className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
         >
           <option value="">Todas severidades</option>

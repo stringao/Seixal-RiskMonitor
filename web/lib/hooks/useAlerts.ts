@@ -11,7 +11,6 @@ export function useAlerts(filters: AlertFilters = {}) {
   const [data, setData] = useState<AlertListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -20,7 +19,6 @@ export function useAlerts(filters: AlertFilters = {}) {
     try {
       const res = await fetchAlerts(filters);
       setData(res);
-      setUnreadCount(res.items.filter((a) => !a.isRead).length);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load alerts");
     } finally {
@@ -35,7 +33,6 @@ export function useAlerts(filters: AlertFilters = {}) {
       .then((res) => {
         if (active) {
           setData(res);
-          setUnreadCount(res.items.filter((a) => !a.isRead).length);
         }
       })
       .catch((err: unknown) => {
@@ -56,6 +53,8 @@ export function useAlerts(filters: AlertFilters = {}) {
     await markAlertsRead(request);
     await load();
   };
+
+  const unreadCount = data?.items.filter((a) => !a.isRead).length ?? 0;
 
   return { data, loading, error, unreadCount, markRead, refresh: load };
 }
