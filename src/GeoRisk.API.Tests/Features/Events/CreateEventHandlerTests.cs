@@ -47,11 +47,11 @@ public sealed class CreateEventHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.EventType.Should().Be(EventType.Fire);
+        result.EventType.Should().Be("Fire");
         result.Title.Should().Be("Test Fire");
         result.Description.Should().Be("A fire event");
-        result.Severity.Should().Be(RiskLevel.High);
-        result.Source.Should().Be(EventSource.Manual);
+        result.Severity.Should().Be("High");
+        result.Source.Should().Be("Manual");
         result.Id.Should().NotBe(Guid.Empty);
     }
 

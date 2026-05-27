@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using NetTopologySuite.Geometries;
 
 #nullable disable
+#pragma warning disable S1192 // String literals should not be duplicated
 
 namespace GeoRisk.API.Migrations
 {

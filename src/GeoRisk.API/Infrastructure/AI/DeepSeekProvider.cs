@@ -10,6 +10,10 @@ namespace GeoRisk.API.Infrastructure.AI;
 /// </summary>
 public class DeepSeekProvider : ILlmProvider
 {
+#pragma warning disable S1075
+    private const string ApiBaseUrl = "https://api.deepseek.com/v1/chat/completions";
+#pragma warning restore S1075
+
     private readonly HttpClient _httpClient;
     private readonly ILlmSettingsService _settingsService;
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -40,7 +44,7 @@ public class DeepSeekProvider : ILlmProvider
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.deepseek.com/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
@@ -71,7 +75,7 @@ public class DeepSeekProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.deepseek.com/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
@@ -84,7 +88,7 @@ public class DeepSeekProvider : ILlmProvider
         return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize response");
     }
 
-    private record DeepSeekResponse(List<DeepSeekChoice>? Choices);
-    private record DeepSeekChoice(DeepSeekMessage? Message);
-    private record DeepSeekMessage(string Content);
+    private sealed record DeepSeekResponse(List<DeepSeekChoice>? Choices);
+    private sealed record DeepSeekChoice(DeepSeekMessage? Message);
+    private sealed record DeepSeekMessage(string Content);
 }

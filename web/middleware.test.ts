@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 
-// The middleware module is self-contained. We import it directly.
+// The proxy module is self-contained. We import it directly.
 // NextRequest and NextResponse are available from next/server in the test env.
 
-describe("middleware", () => {
+describe("proxy", () => {
   let middleware: (request: NextRequest) => NextResponse;
 
   beforeEach(async () => {
     vi.resetModules();
-    const mod = await import("./middleware");
+    const mod = await import("./proxy");
     middleware = mod.middleware;
   });
 
@@ -130,9 +130,9 @@ describe("middleware", () => {
   // middleware function itself is never called for those paths.
   // We verify the config export is correct.
 
-  describe("config matcher", () => {
+  describe("config proxy", () => {
     it("excludes _next/static, _next/image, favicon.ico, and api from matcher", async () => {
-      const mod = await import("./middleware");
+      const mod = await import("./proxy");
       const config = mod.config;
 
       expect(config).toBeDefined();

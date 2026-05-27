@@ -4,6 +4,10 @@ namespace GeoRisk.API.Infrastructure.ExternalApis;
 
 public sealed class AnepcClient : IAnepcClient
 {
+#pragma warning disable S1075
+    private const string ApiEndpoint = "https://www.procivil.pt/emergencias/api/active";
+#pragma warning restore S1075
+
     private readonly HttpClient _http;
     private readonly ILogger<AnepcClient> _logger;
 
@@ -17,7 +21,7 @@ public sealed class AnepcClient : IAnepcClient
     {
         try
         {
-            var response = await _http.GetAsync("https://www.procivil.pt/emergencias/api/active", ct);
+            var response = await _http.GetAsync(ApiEndpoint, ct);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("ANEPC API returned {StatusCode}", response.StatusCode);
@@ -46,32 +50,57 @@ public sealed class AnepcClient : IAnepcClient
             "Active", 50)
     ];
 
-    private static IReadOnlyList<AnepcEmergency> ParseAnepcResponse(string json)
+    private static List<AnepcEmergency> ParseAnepcResponse(string json)
     {
         try
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Array)
+            if (root.ValueKind != JsonValueKind.Array)
+                return [];
+
+            var list = new List<AnepcEmergency>();
+            foreach (var item in root.EnumerateArray())
             {
-                var list = new List<AnepcEmergency>();
-                foreach (var item in root.EnumerateArray())
-                {
-                    list.Add(new AnepcEmergency(
-                        item.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
-                        item.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "",
-                        item.TryGetProperty("district", out var d) ? d.GetString() ?? "" : "",
-                        item.TryGetProperty("county", out var c) ? c.GetString() ?? "" : "",
-                        item.TryGetProperty("lat", out var lat) ? lat.GetDouble() : 0,
-                        item.TryGetProperty("lon", out var lon) ? lon.GetDouble() : 0,
-                        item.TryGetProperty("declaredAt", out var da) ? da.GetDateTime() : DateTime.UtcNow,
-                        item.TryGetProperty("status", out var s) ? s.GetString() ?? "" : "",
-                        item.TryGetProperty("population", out var p) ? p.GetInt32() : 0));
-                }
-                return list;
+                list.Add(ParseAnepcEmergency(item));
             }
+            return list;
         }
-        catch { }
+        catch { /* Intentionally swallowed: non-critical ANEPC parsing failure */ }
         return [];
+    }
+
+    private static AnepcEmergency ParseAnepcEmergency(JsonElement item)
+    {
+        return new AnepcEmergency(
+            GetStringProperty(item, "id"),
+            GetStringProperty(item, "type"),
+            GetStringProperty(item, "district"),
+            GetStringProperty(item, "county"),
+            GetDoubleProperty(item, "lat"),
+            GetDoubleProperty(item, "lon"),
+            GetDateTimeProperty(item, "declaredAt"),
+            GetStringProperty(item, "status"),
+            GetIntProperty(item, "population"));
+    }
+
+    private static string GetStringProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetString() ?? "" : "";
+    }
+
+    private static double GetDoubleProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetDouble() : 0;
+    }
+
+    private static DateTime GetDateTimeProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetDateTime() : DateTime.UtcNow;
+    }
+
+    private static int GetIntProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetInt32() : 0;
     }
 }

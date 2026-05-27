@@ -20,7 +20,10 @@ ENV ASPNETCORE_URLS=http://+:8080
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgssapi-krb5-2 \
     libkrb5-3 \
-    && rm -rf /var/lib/apt/lists/*
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --break-system-packages rasterio --no-cache-dir
 
 EXPOSE 8080
 

@@ -44,9 +44,10 @@ public sealed class GetEventByIdHandlerTests
         result.Should().NotBeNull();
         result!.Id.Should().Be(eventId);
         result.Title.Should().Be("Test Fire");
-        result.EventType.Should().Be(EventType.Fire);
+        result.EventType.Should().Be("Fire");
         result.Latitude.Should().Be(38.64);
         result.Longitude.Should().Be(-9.10);
+        result.Severity.Should().Be("High");
     }
 
     [Fact]

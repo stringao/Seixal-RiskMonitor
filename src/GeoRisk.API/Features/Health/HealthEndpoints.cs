@@ -5,13 +5,15 @@ namespace GeoRisk.API.Features.Health;
 
 public static class HealthEndpoints
 {
+    private const string StatusKey = "status";
+
     public static RouteGroupBuilder MapHealthEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/", async (GeoRiskDbContext db, IConnectionMultiplexer redis, ILogger<Program> logger) =>
         {
             var health = new Dictionary<string, object>
             {
-                ["status"] = "Healthy",
+                [StatusKey] = "Healthy",
                 ["timestamp"] = DateTime.UtcNow
             };
 
@@ -19,12 +21,12 @@ public static class HealthEndpoints
             {
                 var dbCanConnect = await db.Database.CanConnectAsync();
                 health["database"] = dbCanConnect ? "Connected" : "Disconnected";
-                if (!dbCanConnect) health["status"] = "Degraded";
+                if (!dbCanConnect) health[StatusKey] = "Degraded";
             }
             catch (Exception ex)
             {
                 health["database"] = "Error: " + ex.Message;
-                health["status"] = "Unhealthy";
+                health[StatusKey] = "Unhealthy";
             }
 
             try
@@ -36,11 +38,15 @@ public static class HealthEndpoints
             catch (Exception ex)
             {
                 health["redis"] = "Error: " + ex.Message;
-                health["status"] = "Degraded";
+                health[StatusKey] = "Degraded";
             }
 
-            var statusCode = health["status"].ToString() == "Healthy" ? 200 :
-                             health["status"].ToString() == "Degraded" ? 200 : 503;
+            var statusCode = health[StatusKey].ToString() switch
+            {
+                "Healthy" => 200,
+                "Degraded" => 200,
+                _ => 503
+            };
 
             return statusCode == 200
                 ? Results.Ok(health)

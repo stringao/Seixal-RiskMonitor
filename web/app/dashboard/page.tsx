@@ -5,6 +5,7 @@ import { useEvents } from "@/lib/hooks/useEvents";
 import { useRiskDashboard } from "@/lib/hooks/useRiskDashboard";
 import { useAlerts } from "@/lib/hooks/useAlerts";
 import { useJobStatuses } from "@/lib/hooks/useJobStatuses";
+import { useAirQuality, usePollen } from "@/lib/hooks/useAirQuality";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { RecentEvents } from "@/components/dashboard/RecentEvents";
 import { EventTypeChart } from "@/components/dashboard/EventTypeChart";
@@ -12,6 +13,7 @@ import { EventsTimeChart } from "@/components/dashboard/EventsTimeChart";
 import { SeverityDistribution } from "@/components/dashboard/SeverityDistribution";
 import { ActiveAlertsPanel } from "@/components/dashboard/ActiveAlertsPanel";
 import { SystemHealthWidget } from "@/components/dashboard/SystemHealthWidget";
+import { AirQualityPanel } from "@/components/environment/AirQualityPanel";
 
 export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -20,11 +22,15 @@ export default function DashboardPage() {
   const { data: alertData, loading: alertsLoading } = useAlerts();
   const { data: jobsData } = useJobStatuses(refreshKey);
 
+  // Use Setúbal area coordinates (38.5, -8.9) as default per requirements
+  const { data: airQualityData, loading: airQualityLoading } = useAirQuality(38.5, -8.9);
+  const { data: pollenData, loading: pollenLoading } = usePollen(38.5, -8.9);
+
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
 
-  const loading = eventsLoading || alertsLoading || riskLoading;
+  const loading = eventsLoading || alertsLoading || riskLoading || airQualityLoading || pollenLoading;
 
   if (loading) {
     return (
@@ -79,6 +85,13 @@ export default function DashboardPage() {
         <RecentEvents events={events} />
         <ActiveAlertsPanel alerts={alerts} unreadCount={unreadCount} />
       </div>
+
+      {/* Air Quality & Pollen Panel */}
+      <AirQualityPanel
+        airQualityData={airQualityData}
+        pollenData={pollenData}
+        loading={airQualityLoading || pollenLoading}
+      />
 
       {jobsData.length > 0 && <SystemHealthWidget jobs={jobsData} onRefresh={handleRefresh} />}
     </div>

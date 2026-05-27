@@ -10,6 +10,10 @@ namespace GeoRisk.API.Infrastructure.AI;
 /// </summary>
 public class QwenProvider : ILlmProvider
 {
+#pragma warning disable S1075
+    private const string ApiBaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+#pragma warning restore S1075
+
     private readonly HttpClient _httpClient;
     private readonly ILlmSettingsService _settingsService;
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -40,7 +44,7 @@ public class QwenProvider : ILlmProvider
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
@@ -67,7 +71,7 @@ public class QwenProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
@@ -76,7 +80,7 @@ public class QwenProvider : ILlmProvider
         return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize response");
     }
 
-    private record QwenResponse(List<QwenChoice>? Choices);
-    private record QwenChoice(QwenMessage? Message);
-    private record QwenMessage(string Content);
+    private sealed record QwenResponse(List<QwenChoice>? Choices);
+    private sealed record QwenChoice(QwenMessage? Message);
+    private sealed record QwenMessage(string Content);
 }

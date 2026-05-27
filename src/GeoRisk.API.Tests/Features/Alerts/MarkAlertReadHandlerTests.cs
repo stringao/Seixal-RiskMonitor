@@ -3,8 +3,10 @@ using GeoRisk.API.Domain.Entities;
 using GeoRisk.API.Domain.Enums;
 using GeoRisk.API.Features.Alerts;
 using GeoRisk.API.Features.Alerts.Dto;
+using GeoRisk.API.Infrastructure.Cache;
 using GeoRisk.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace GeoRisk.API.Tests.Features.Alerts;
 
@@ -16,6 +18,14 @@ public sealed class MarkAlertReadHandlerTests
             .UseInMemoryDatabase(dbName)
             .Options;
         return new GeoRiskDbContext(options);
+    }
+
+    private static Mock<ICacheService> CreateCacheMock()
+    {
+        var cache = new Mock<ICacheService>();
+        cache.Setup(c => c.RemoveByPrefixAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        return cache;
     }
 
     private static async Task SeedAlerts(GeoRiskDbContext db)
@@ -36,7 +46,7 @@ public sealed class MarkAlertReadHandlerTests
         var dbName = $"mark_all_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
         await SeedAlerts(db);
-        var handler = new MarkAlertReadHandler(db);
+        var handler = new MarkAlertReadHandler(db, CreateCacheMock().Object);
         var command = new MarkAlertReadCommand(null, true);
 
         var result = await handler.HandleAsync(command, CancellationToken.None);
@@ -53,7 +63,7 @@ public sealed class MarkAlertReadHandlerTests
         using var db = CreateDbContext(dbName);
         await SeedAlerts(db);
         var alertToMark = db.Alerts.First(a => !a.IsRead);
-        var handler = new MarkAlertReadHandler(db);
+        var handler = new MarkAlertReadHandler(db, CreateCacheMock().Object);
         var command = new MarkAlertReadCommand(new List<Guid> { alertToMark.Id }, false);
 
         var result = await handler.HandleAsync(command, CancellationToken.None);
@@ -69,7 +79,7 @@ public sealed class MarkAlertReadHandlerTests
         var dbName = $"mark_empty_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
         await SeedAlerts(db);
-        var handler = new MarkAlertReadHandler(db);
+        var handler = new MarkAlertReadHandler(db, CreateCacheMock().Object);
         var command = new MarkAlertReadCommand(new List<Guid>(), false);
 
         var result = await handler.HandleAsync(command, CancellationToken.None);
@@ -83,7 +93,7 @@ public sealed class MarkAlertReadHandlerTests
         var dbName = $"mark_nonexistent_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
         await SeedAlerts(db);
-        var handler = new MarkAlertReadHandler(db);
+        var handler = new MarkAlertReadHandler(db, CreateCacheMock().Object);
         var command = new MarkAlertReadCommand(new List<Guid> { Guid.NewGuid() }, false);
 
         var result = await handler.HandleAsync(command, CancellationToken.None);

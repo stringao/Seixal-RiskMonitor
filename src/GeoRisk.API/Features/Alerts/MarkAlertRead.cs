@@ -37,19 +37,20 @@ public sealed class MarkAlertReadHandler(
 
 public static class MarkAlertReadEndpoint
 {
+    private static readonly JsonSerializerOptions CachedJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+
     public static RouteGroupBuilder MapMarkAlertRead(this RouteGroupBuilder group)
     {
         group.MapPost("/read", async (
             HttpContext http,
             ICommandHandler<MarkAlertReadCommand, MarkAlertReadResponse> handler) =>
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            };
-            var request = await JsonSerializer.DeserializeAsync<MarkAlertReadRequest>(http.Request.Body, jsonOptions);
+            var request = await JsonSerializer.DeserializeAsync<MarkAlertReadRequest>(http.Request.Body, CachedJsonOptions);
             if (request is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await handler.HandleAsync(new MarkAlertReadCommand(request.AlertIds, request.MarkAllRead ?? false), default);
             return Results.Ok(result);

@@ -6,6 +6,9 @@ using GeoRisk.API.Features.Alerts.Dto;
 using GeoRisk.API.Infrastructure.Persistence;
 using GeoRisk.API.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NetTopologySuite.Geometries;
 
 namespace GeoRisk.API.Tests.Features.Alerts;
@@ -20,6 +23,18 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         return new GeoRiskDbContext(options);
     }
 
+    private static Mock<AlertRuleEvaluationEngine> CreateEvaluationEngineMock()
+    {
+        var dbMock = new Mock<GeoRiskDbContext>(MockBehavior.Loose, new DbContextOptionsBuilder<GeoRiskDbContext>().Options);
+        var loggerMock = new Mock<ILogger<AlertRuleEvaluationEngine>>();
+        return new Mock<AlertRuleEvaluationEngine>(dbMock.Object, loggerMock.Object);
+    }
+
+    private static Mock<ILogger<ConfigureAlertRulesHandler>> CreateLoggerMock()
+    {
+        return new Mock<ILogger<ConfigureAlertRulesHandler>>();
+    }
+
     public void Dispose()
     {
     }
@@ -32,14 +47,25 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"create_rule_valid_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
         var request = new CreateAlertRuleRequest(
             Name: "Fire Alert Rule",
             EventType: "Fire",
             SeverityThreshold: "High",
             AreaWkt: null,
-            IsActive: true);
+            IsActive: true,
+            MinFwi: null,
+            MaxFwi: null,
+            MinWindSpeed: null,
+            MinTemperature: null,
+            SeasonStartMonth: null,
+            SeasonEndMonth: null,
+            AreaKm2Threshold: null,
+            ConsecutiveCount: null,
+            EscalationMinutes: null,
+            NotifyRoles: null);
         var command = new ConfigureAlertRulesCommand(
             ConfigureAlertRulesAction.Create, null, request, null);
 
@@ -66,15 +92,26 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"create_rule_geometry_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
         var wkt = "POLYGON ((-9.1 38.6, -9.0 38.6, -9.0 38.7, -9.1 38.7, -9.1 38.6))";
         var request = new CreateAlertRuleRequest(
             Name: "Area Rule",
             EventType: "Flood",
             SeverityThreshold: "Medium",
             AreaWkt: wkt,
-            IsActive: true);
+            IsActive: true,
+            MinFwi: null,
+            MaxFwi: null,
+            MinWindSpeed: null,
+            MinTemperature: null,
+            SeasonStartMonth: null,
+            SeasonEndMonth: null,
+            AreaKm2Threshold: null,
+            ConsecutiveCount: null,
+            EscalationMinutes: null,
+            NotifyRoles: null);
         var command = new ConfigureAlertRulesCommand(
             ConfigureAlertRulesAction.Create, null, request, null);
 
@@ -93,14 +130,25 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"create_rule_invalid_wkt_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
         var request = new CreateAlertRuleRequest(
             Name: "Invalid WKT Rule",
             EventType: "Fire",
             SeverityThreshold: "High",
             AreaWkt: "INVALID_WKT",
-            IsActive: true);
+            IsActive: true,
+            MinFwi: null,
+            MaxFwi: null,
+            MinWindSpeed: null,
+            MinTemperature: null,
+            SeasonStartMonth: null,
+            SeasonEndMonth: null,
+            AreaKm2Threshold: null,
+            ConsecutiveCount: null,
+            EscalationMinutes: null,
+            NotifyRoles: null);
         var command = new ConfigureAlertRulesCommand(
             ConfigureAlertRulesAction.Create, null, request, null);
 
@@ -119,14 +167,25 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         {
             var dbName = $"create_rule_{eventType.ToLower()}_{Guid.NewGuid()}";
             using var db = CreateDbContext(dbName);
-            var trigger = new AlertTriggerService();
-            var handler = new ConfigureAlertRulesHandler(db, trigger);
+            var evaluationEngine = CreateEvaluationEngineMock();
+            var logger = CreateLoggerMock();
+            var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
             var request = new CreateAlertRuleRequest(
                 Name: $"{eventType} Rule",
                 EventType: eventType,
                 SeverityThreshold: "Medium",
                 AreaWkt: null,
-                IsActive: true);
+                IsActive: true,
+                MinFwi: null,
+                MaxFwi: null,
+                MinWindSpeed: null,
+                MinTemperature: null,
+                SeasonStartMonth: null,
+                SeasonEndMonth: null,
+                AreaKm2Threshold: null,
+                ConsecutiveCount: null,
+                EscalationMinutes: null,
+                NotifyRoles: null);
             var command = new ConfigureAlertRulesCommand(
                 ConfigureAlertRulesAction.Create, null, request, null);
 
@@ -148,14 +207,25 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         {
             var dbName = $"create_rule_{riskLevel.ToLower()}_{Guid.NewGuid()}";
             using var db = CreateDbContext(dbName);
-            var trigger = new AlertTriggerService();
-            var handler = new ConfigureAlertRulesHandler(db, trigger);
+            var evaluationEngine = CreateEvaluationEngineMock();
+            var logger = CreateLoggerMock();
+            var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
             var request = new CreateAlertRuleRequest(
                 Name: $"{riskLevel} Risk Rule",
                 EventType: "Fire",
                 SeverityThreshold: riskLevel,
                 AreaWkt: null,
-                IsActive: true);
+                IsActive: true,
+                MinFwi: null,
+                MaxFwi: null,
+                MinWindSpeed: null,
+                MinTemperature: null,
+                SeasonStartMonth: null,
+                SeasonEndMonth: null,
+                AreaKm2Threshold: null,
+                ConsecutiveCount: null,
+                EscalationMinutes: null,
+                NotifyRoles: null);
             var command = new ConfigureAlertRulesCommand(
                 ConfigureAlertRulesAction.Create, null, request, null);
 
@@ -177,8 +247,9 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"update_rule_valid_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
 
         // Create initial rule
         var ruleId = Guid.NewGuid();
@@ -198,7 +269,17 @@ public sealed class ConfigureAlertRulesTests : IDisposable
             EventType: "Flood",
             SeverityThreshold: "High",
             AreaWkt: null,
-            IsActive: false);
+            IsActive: false,
+            MinFwi: null,
+            MaxFwi: null,
+            MinWindSpeed: null,
+            MinTemperature: null,
+            SeasonStartMonth: null,
+            SeasonEndMonth: null,
+            AreaKm2Threshold: null,
+            ConsecutiveCount: null,
+            EscalationMinutes: null,
+            NotifyRoles: null);
         var command = new ConfigureAlertRulesCommand(
             ConfigureAlertRulesAction.Update, ruleId, null, updateRequest);
 
@@ -219,11 +300,15 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"update_rule_notfound_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
         var nonExistentId = Guid.NewGuid();
         var updateRequest = new UpdateAlertRuleRequest(
-            Name: "Updated", EventType: null, SeverityThreshold: null, AreaWkt: null, IsActive: null);
+            Name: "Updated", EventType: null, SeverityThreshold: null, AreaWkt: null, IsActive: null,
+            MinFwi: null, MaxFwi: null, MinWindSpeed: null, MinTemperature: null,
+            SeasonStartMonth: null, SeasonEndMonth: null, AreaKm2Threshold: null,
+            ConsecutiveCount: null, EscalationMinutes: null, NotifyRoles: null);
         var command = new ConfigureAlertRulesCommand(
             ConfigureAlertRulesAction.Update, nonExistentId, null, updateRequest);
 
@@ -242,8 +327,9 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"delete_rule_valid_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
 
         var ruleId = Guid.NewGuid();
         db.AlertRules.Add(new AlertRule
@@ -275,8 +361,9 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"delete_rule_notfound_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
         var nonExistentId = Guid.NewGuid();
         var command = new ConfigureAlertRulesCommand(
             ConfigureAlertRulesAction.Delete, nonExistentId, null, null);
@@ -296,8 +383,9 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"toggle_active_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
 
         var ruleId = Guid.NewGuid();
         db.AlertRules.Add(new AlertRule
@@ -325,8 +413,9 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"toggle_inactive_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
 
         var ruleId = Guid.NewGuid();
         db.AlertRules.Add(new AlertRule
@@ -354,8 +443,9 @@ public sealed class ConfigureAlertRulesTests : IDisposable
         // Arrange
         var dbName = $"toggle_multiple_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
-        var trigger = new AlertTriggerService();
-        var handler = new ConfigureAlertRulesHandler(db, trigger);
+        var evaluationEngine = CreateEvaluationEngineMock();
+        var logger = CreateLoggerMock();
+        var handler = new ConfigureAlertRulesHandler(db, evaluationEngine.Object, logger.Object);
 
         var ruleId = Guid.NewGuid();
         db.AlertRules.Add(new AlertRule

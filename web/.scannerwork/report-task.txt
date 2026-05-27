@@ -2,5 +2,5 @@ projectKey=georisk-web
 serverUrl=http://localhost:9001
 serverVersion=26.4.0.121862
 dashboardUrl=http://localhost:9001/dashboard?id=georisk-web
-ceTaskId=37aeddcd-2fac-4e0b-a71b-506b8e7c7008
-ceTaskUrl=http://localhost:9001/api/ce/task?id=37aeddcd-2fac-4e0b-a71b-506b8e7c7008
+ceTaskId=208ca618-d605-44af-a28a-ed9d73d8ebdd
+ceTaskUrl=http://localhost:9001/api/ce/task?id=208ca618-d605-44af-a28a-ed9d73d8ebdd

@@ -44,29 +44,23 @@ public sealed class LoginHandler(
 
 public static class LoginEndpoint
 {
+    private static readonly JsonSerializerOptions CachedJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+
     public static RouteGroupBuilder MapLogin(this RouteGroupBuilder group)
     {
         group.MapPost("/login", async (
             HttpContext http,
             IQueryHandler<LoginQuery, AuthResponse> handler) =>
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            };
-            try
-            {
-                var query = await JsonSerializer.DeserializeAsync<LoginQuery>(http.Request.Body, jsonOptions);
-                if (query is null) return Results.BadRequest(new { error = "Request body is required" });
-                var result = await handler.HandleAsync(query, default);
-                return Results.Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Results.Json(new { error = ex.Message }, statusCode: 401);
-            }
+            var query = await JsonSerializer.DeserializeAsync<LoginQuery>(http.Request.Body, CachedJsonOptions);
+            if (query is null) return Results.BadRequest(new { error = "Request body is required" });
+            var result = await handler.HandleAsync(query, default);
+            return Results.Ok(result);
         });
 
         return group;

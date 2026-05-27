@@ -7,7 +7,7 @@ namespace GeoRisk.API.BackgroundJobs;
 public sealed class ReportGenerationJob(
     IServiceScopeFactory scopeFactory, ILogger<ReportGenerationJob> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var now = DateTime.UtcNow;
         var nextMonday = now.Date.AddDays(7 - (int)now.DayOfWeek + (int)DayOfWeek.Monday);
@@ -19,13 +19,13 @@ public sealed class ReportGenerationJob(
         if (delay > TimeSpan.Zero)
         {
             logger.LogInformation("Report generation job scheduled for {Time}", nextRun);
-            await Task.Delay(delay, ct);
+            await Task.Delay(delay, stoppingToken);
         }
 
         using var timer = new PeriodicTimer(TimeSpan.FromDays(7));
-        while (await timer.WaitForNextTickAsync(ct))
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            await GenerateReportAsync(ct);
+            await GenerateReportAsync(stoppingToken);
         }
     }
 
@@ -48,7 +48,6 @@ public sealed class ReportGenerationJob(
             var totalEvents = eventsThisWeek.Count;
             var byType = eventsThisWeek.GroupBy(e => e.EventType).ToDictionary(g => g.Key, g => g.Count());
             var bySeverity = eventsThisWeek.GroupBy(e => e.Severity).ToDictionary(g => g.Key, g => g.Count());
-            var bySource = eventsThisWeek.GroupBy(e => e.Source).ToDictionary(g => g.Key, g => g.Count());
 
             logger.LogInformation(
                 "WEEKLY REPORT: Total={Total} Fire={Fire} Flood={Flood} Storm={Storm} " +

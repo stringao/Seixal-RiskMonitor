@@ -1,8 +1,9 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: false,
+  fullyParallel: true,
+  workers: 4,
   retries: 0,
   timeout: 30000,
   use: {

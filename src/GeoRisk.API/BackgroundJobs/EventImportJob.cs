@@ -3,6 +3,7 @@ using GeoRisk.API.Infrastructure.ExternalApis;
 using GeoRisk.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+#pragma warning disable S2139 // Log and rethrow is intentional for sync status tracking
 using NetTopologySuite.Geometries;
 
 namespace GeoRisk.API.BackgroundJobs;
@@ -12,12 +13,12 @@ public sealed class EventImportJob(
     IServiceScopeFactory scopeFactory, ISyncStatusService syncStatus,
     ILogger<EventImportJob> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(30));
-        while (await timer.WaitForNextTickAsync(ct))
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            await ImportEventsAsync(ct);
+            await ImportEventsAsync(stoppingToken);
         }
     }
 
@@ -36,9 +37,9 @@ public sealed class EventImportJob(
                 .Select(e => e.SourceId!)
                 .ToListAsync(ct);
 
-            await ImportFromIcnfAsync(db, ct, existingSourceIds);
-            await ImportFromAnepcAsync(db, ct, existingSourceIds);
-            await ImportIpmaFireRiskAsync(db, ct, existingSourceIds);
+            await ImportFromIcnfAsync(db, existingSourceIds, ct);
+            await ImportFromAnepcAsync(db, existingSourceIds, ct);
+            await ImportIpmaFireRiskAsync(db, existingSourceIds, ct);
 
             logger.LogInformation("Event import job completed");
         }
@@ -48,7 +49,7 @@ public sealed class EventImportJob(
         }
     }
 
-    private async Task ImportFromIcnfAsync(GeoRiskDbContext db, CancellationToken ct, List<string> existingSourceIds)
+    private async Task ImportFromIcnfAsync(GeoRiskDbContext db, List<string> existingSourceIds, CancellationToken ct)
     {
         try
         {
@@ -76,17 +77,17 @@ public sealed class EventImportJob(
 
             await db.SaveChangesAsync(ct);
             await syncStatus.RecordSuccessAsync("icnf", newFires.Count, ct);
-            logger.LogInformation("Imported {Count} ICNF events", newFires.Count());
+            logger.LogInformation("Imported {Count} ICNF events", newFires.Count);
         }
         catch (Exception ex)
         {
             await syncStatus.RecordFailureAsync("icnf", ex.Message, ct);
-            logger.LogError(ex, "Failed to import from ICNF");
+            logger.LogError(ex, "Failed to import from ICNF: {Message}", ex.Message);
             throw;
         }
     }
 
-    private async Task ImportFromAnepcAsync(GeoRiskDbContext db, CancellationToken ct, List<string> existingSourceIds)
+    private async Task ImportFromAnepcAsync(GeoRiskDbContext db, List<string> existingSourceIds, CancellationToken ct)
     {
         try
         {
@@ -127,12 +128,12 @@ public sealed class EventImportJob(
         catch (Exception ex)
         {
             await syncStatus.RecordFailureAsync("anepc", ex.Message, ct);
-            logger.LogError(ex, "Failed to import from ANEPC");
+            logger.LogError(ex, "Failed to import from ANEPC: {Message}", ex.Message);
             throw;
         }
     }
 
-    private async Task ImportIpmaFireRiskAsync(GeoRiskDbContext db, CancellationToken ct, List<string> existingSourceIds)
+    private async Task ImportIpmaFireRiskAsync(GeoRiskDbContext db, List<string> existingSourceIds, CancellationToken ct)
     {
         try
         {
@@ -169,7 +170,7 @@ public sealed class EventImportJob(
         catch (Exception ex)
         {
             await syncStatus.RecordFailureAsync("ipma", ex.Message, ct);
-            logger.LogError(ex, "Failed to import from IPMA");
+            logger.LogError(ex, "Failed to import from IPMA: {Message}", ex.Message);
             throw;
         }
     }

@@ -117,7 +117,7 @@ public sealed class GetAlertsHandlerTests
         var dbName = $"get_alerts_cached_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
         var cachedResult = new AlertListResponse(
-            new List<AlertResponse> { new(Guid.NewGuid(), "Cached", AlertSeverity.Info, "m", null, false, DateTime.UtcNow) },
+            new List<AlertResponse> { new AlertResponse(Guid.NewGuid(), "Cached", AlertSeverity.Info, "m", null, false, DateTime.UtcNow, null, null, null, null, null, null, false, null, null) },
             1, 1, 20);
         var cache = new Mock<ICacheService>();
         cache.Setup(c => c.GetAsync<AlertListResponse>("cache:hit", It.IsAny<CancellationToken>()))

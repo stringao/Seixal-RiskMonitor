@@ -4,12 +4,12 @@ using NetTopologySuite.Geometries;
 
 namespace GeoRisk.API.Infrastructure.Services;
 
-public class RiskCalculationService
+public static class RiskCalculationService
 {
     private static readonly int[] SeverityWeights = { 1, 3, 7, 15 };
     private const double DecayHalfLifeDays = 30.0;
 
-    public async Task<Dictionary<Guid, double>> CalculateZoneScoresAsync(
+    public static async Task<Dictionary<Guid, double>> CalculateZoneScoresAsync(
         GeoRiskDbContext db,
         CancellationToken ct = default)
     {
@@ -39,7 +39,7 @@ public class RiskCalculationService
         return scores;
     }
 
-    public RiskLevel ScoreToRiskLevel(double score) => score switch
+    public static RiskLevel ScoreToRiskLevel(double score) => score switch
     {
         >= 60 => RiskLevel.Critical,
         >= 30 => RiskLevel.High,

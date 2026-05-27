@@ -15,11 +15,14 @@ public sealed class CreateRiskZoneHandler(GeoRiskDbContext db) : ICommandHandler
         var reader = new WKTReader();
         var geometry = reader.Read(cmd.Wkt);
 
+        if (geometry is not Polygon polygon)
+            throw new InvalidOperationException("Geometry must be a polygon");
+
         var zone = new RiskZone
         {
             Id = Guid.NewGuid(),
             Name = cmd.Name,
-            Geometry = geometry as Polygon,
+            Geometry = polygon,
             RiskLevel = RiskLevel.Low,
             CalculatedAt = DateTime.UtcNow
         };
@@ -33,19 +36,20 @@ public sealed class CreateRiskZoneHandler(GeoRiskDbContext db) : ICommandHandler
 
 public static class CreateRiskZoneEndpoint
 {
+    private static readonly JsonSerializerOptions CachedJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+
     public static RouteGroupBuilder MapCreateRiskZone(this RouteGroupBuilder group)
     {
         group.MapPost("/zones", async (
             HttpContext http,
             ICommandHandler<CreateRiskZoneCommand, RiskZoneResponse> h) =>
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            };
-            var cmd = await JsonSerializer.DeserializeAsync<CreateRiskZoneCommand>(http.Request.Body, jsonOptions);
+            var cmd = await JsonSerializer.DeserializeAsync<CreateRiskZoneCommand>(http.Request.Body, CachedJsonOptions);
             if (cmd is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await h.HandleAsync(cmd, default);
             return Results.Created($"/api/risk/zones/{result.Id}", result);

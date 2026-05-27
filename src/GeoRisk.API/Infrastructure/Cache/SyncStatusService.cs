@@ -1,3 +1,4 @@
+using System.Globalization;
 using StackExchange.Redis;
 
 namespace GeoRisk.API.Infrastructure.Cache;
@@ -42,8 +43,8 @@ public sealed class SyncStatusService(IConnectionMultiplexer redis) : ISyncStatu
         return new SyncStatus(
             Source: source.ToUpperInvariant(),
             DisplayName: SourceDisplayNames.GetValueOrDefault(source, source.ToUpperInvariant()),
-            LastSuccessAt: lastSuccess.HasValue ? DateTime.Parse((string)lastSuccess!) : null,
-            LastAttemptAt: lastAttempt.HasValue ? DateTime.Parse((string)lastAttempt!) : null,
+            LastSuccessAt: lastSuccess.HasValue ? DateTime.Parse((string)lastSuccess!, CultureInfo.InvariantCulture) : null,
+            LastAttemptAt: lastAttempt.HasValue ? DateTime.Parse((string)lastAttempt!, CultureInfo.InvariantCulture) : null,
             Status: status.HasValue ? (string)status! : "Never run",
             ItemsSyncedLastRun: itemCount.HasValue ? int.Parse((string)itemCount!) : 0,
             LastError: error.HasValue ? (string)error! : null

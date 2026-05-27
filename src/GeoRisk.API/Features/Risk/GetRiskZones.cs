@@ -8,7 +8,7 @@ namespace GeoRisk.API.Features.Risk;
 
 public sealed record GetRiskZonesQuery(Guid? ZoneId) : IQuery<List<RiskZoneResponse>>;
 
-public sealed class GetRiskZonesHandler(GeoRiskDbContext db, RiskCalculationService calc)
+public sealed class GetRiskZonesHandler(GeoRiskDbContext db)
     : IQueryHandler<GetRiskZonesQuery, List<RiskZoneResponse>>
 {
     public async Task<List<RiskZoneResponse>> HandleAsync(GetRiskZonesQuery query, CancellationToken ct)
@@ -17,11 +17,11 @@ public sealed class GetRiskZonesHandler(GeoRiskDbContext db, RiskCalculationServ
             ? await db.RiskZones.Where(z => z.Id == query.ZoneId.Value).ToListAsync(ct)
             : await db.RiskZones.AsNoTracking().ToListAsync(ct);
 
-        var scores = await calc.CalculateZoneScoresAsync(db, ct);
+        var scores = await RiskCalculationService.CalculateZoneScoresAsync(db, ct);
 
         return zones.Select(z => new RiskZoneResponse(
             z.Id, z.Name, z.Geometry.AsText(),
-            calc.ScoreToRiskLevel(scores.GetValueOrDefault(z.Id, 0)),
+            RiskCalculationService.ScoreToRiskLevel(scores.GetValueOrDefault(z.Id, 0)),
             Math.Round(scores.GetValueOrDefault(z.Id, 0), 2),
             z.CalculatedAt)).ToList();
     }

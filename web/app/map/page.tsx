@@ -1,6 +1,5 @@
 'use client';
 
-import { AppLayout } from '@/components/layout/AppLayout';
 import dynamic from 'next/dynamic';
 
 const MapContainer = dynamic(() => import('@/components/map/MapContainer'), {
@@ -14,10 +13,8 @@ const MapContainer = dynamic(() => import('@/components/map/MapContainer'), {
 
 export default function MapPage() {
   return (
-    <AppLayout>
-      <div className="h-full overflow-hidden">
-        <MapContainer />
-      </div>
-    </AppLayout>
+    <div className="h-full overflow-hidden">
+      <MapContainer />
+    </div>
   );
 }

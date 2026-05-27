@@ -6,6 +6,10 @@ namespace GeoRisk.API.Infrastructure.AI;
 
 public class AnthropicProvider : ILlmProvider
 {
+#pragma warning disable S1075
+    private const string ApiBaseUrl = "https://api.anthropic.com/v1/messages";
+#pragma warning restore S1075
+
     private readonly HttpClient _httpClient;
     private readonly ILlmSettingsService _settingsService;
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -34,7 +38,7 @@ public class AnthropicProvider : ILlmProvider
             messages = new[] { new { role = "user", content = user } }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Add("x-api-key", settings.ApiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");
         req.Content = JsonContent.Create(request);
@@ -60,7 +64,7 @@ public class AnthropicProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Add("x-api-key", settings.ApiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");
         req.Content = JsonContent.Create(request);
@@ -70,6 +74,6 @@ public class AnthropicProvider : ILlmProvider
         return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize response");
     }
 
-    private record AnthropicResponse(List<AnthropicContent>? Content);
-    private record AnthropicContent(string Text);
+    private sealed record AnthropicResponse(List<AnthropicContent>? Content);
+    private sealed record AnthropicContent(string Text);
 }

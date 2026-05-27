@@ -35,18 +35,19 @@ public sealed class CreateEventHandler(
 
 public static class CreateEventEndpoint
 {
+    private static readonly JsonSerializerOptions CachedJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+
     public static RouteGroupBuilder MapCreateEvent(this RouteGroupBuilder group)
     {
         group.MapPost("/", async (HttpContext http,
             ICommandHandler<CreateEventCommand, EventResponse> handler) =>
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            };
-            var cmd = await JsonSerializer.DeserializeAsync<CreateEventCommand>(http.Request.Body, jsonOptions);
+            var cmd = await JsonSerializer.DeserializeAsync<CreateEventCommand>(http.Request.Body, CachedJsonOptions);
             if (cmd is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await handler.HandleAsync(cmd, default);
             return Results.Created($"/api/events/{result.Id}", result);

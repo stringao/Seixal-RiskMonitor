@@ -58,19 +58,20 @@ public sealed class RefreshHandler(
 
 public static class RefreshEndpoint
 {
+    private static readonly JsonSerializerOptions CachedJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+
     public static RouteGroupBuilder MapRefresh(this RouteGroupBuilder group)
     {
         group.MapPost("/refresh", async (
             HttpContext http,
             ICommandHandler<RefreshCommand, AuthResponse> handler) =>
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            };
-            var cmd = await JsonSerializer.DeserializeAsync<RefreshCommand>(http.Request.Body, jsonOptions);
+            var cmd = await JsonSerializer.DeserializeAsync<RefreshCommand>(http.Request.Body, CachedJsonOptions);
             if (cmd is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await handler.HandleAsync(cmd, default);
             return Results.Ok(result);

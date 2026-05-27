@@ -81,45 +81,40 @@ function BoundaryLayer({ visibility, level }: { visibility: boolean; level: "mun
     const styleMunicipios = () => ({ color: "#1e40af", weight: 1.5, opacity: 0.7, fillColor: "#3b82f6", fillOpacity: 0.08 });
     const styleDistritos = () => ({ color: "#065f46", weight: 2, opacity: 0.8, fillColor: "#059669", fillOpacity: 0.05 });
 
-    const fetchAndAdd = async () => {
-      if (level === "municipios" || level === "both") {
-        try {
-          const res = await fetch(`${MUNICIPIOS_API}?bbox=${SETUBAL_BBOX}&f=json&limit=100`);
-          if (res.ok) {
-            const geojson = await res.json();
-            if (geojson.features?.length) {
-              group.addLayer(L.geoJSON(geojson as GeoJSON.FeatureCollection, {
-                style: styleMunicipios,
-                onEachFeature: (feature, layer) => {
-                  const props = feature.properties as Record<string, unknown>;
-                  const name = (props.municipio ?? props.distrito_ilha ?? "Municipio") as string;
-                  layer.bindTooltip(name, { sticky: true, className: "boundary-tooltip", direction: "center" });
-                },
-              }));
-            }
-          }
-        } catch (e) { console.error("Failed to load municipios GeoJSON", e); }
-      }
-      if (level === "distritos" || level === "both") {
-        try {
-          const res = await fetch(`${DISTRITOS_API}?bbox=${SETUBAL_BBOX}&f=json&limit=50`);
-          if (res.ok) {
-            const geojson = await res.json();
-            if (geojson.features?.length) {
-              group.addLayer(L.geoJSON(geojson as GeoJSON.FeatureCollection, {
-                style: styleDistritos,
-                onEachFeature: (feature, layer) => {
-                  const props = feature.properties as Record<string, unknown>;
-                  const name = (props.distrito_ilha ?? "Distrito") as string;
-                  layer.bindTooltip(name, { sticky: true, className: "boundary-tooltip boundary-tooltip-distrito", direction: "center" });
-                },
-              }));
-            }
-          }
-        } catch (e) { console.error("Failed to load distritos GeoJSON", e); }
-      }
+    const fetchBoundaryType = async (
+      apiUrl: string,
+      style: () => L.PathOptions,
+      getName: (props: Record<string, unknown>) => string,
+      shouldFetch: boolean
+    ) => {
+      if (!shouldFetch) return;
+      try {
+        const res = await fetch(`${apiUrl}?bbox=${SETUBAL_BBOX}&f=json&limit=100`);
+        if (!res.ok) return;
+        const geojson = await res.json();
+        if (!geojson.features?.length) return;
+        group.addLayer(L.geoJSON(geojson as GeoJSON.FeatureCollection, {
+          style,
+          onEachFeature: (feature, layer) => {
+            const props = feature.properties as Record<string, unknown>;
+            layer.bindTooltip(getName(props), { sticky: true, className: "boundary-tooltip", direction: "center" });
+          },
+        }));
+      } catch (e) { console.error("Failed to load GeoJSON", e); }
     };
-    fetchAndAdd();
+
+    fetchBoundaryType(
+      MUNICIPIOS_API,
+      styleMunicipios,
+      (props) => (props.municipio ?? props.distrito_ilha ?? "Municipio") as string,
+      level === "municipios" || level === "both"
+    );
+    fetchBoundaryType(
+      DISTRITOS_API,
+      styleDistritos,
+      (props) => (props.distrito_ilha ?? "Distrito") as string,
+      level === "distritos" || level === "both"
+    );
 
     return () => { if (layerRef.current) { map.removeLayer(layerRef.current); layerRef.current = null; } };
   }, [map, visibility, level]);

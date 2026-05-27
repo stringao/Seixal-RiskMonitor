@@ -82,15 +82,20 @@ public static class GetEventsEndpoint
 {
     public static RouteGroupBuilder MapGetEvents(this RouteGroupBuilder group)
     {
-        group.MapGet("/", async (int? page, int? pageSize, EventType? type, RiskLevel? severity,
-            DateTime? from, DateTime? to, string? bbox, double? lat, double? lng, double? radius,
-            bool? insideSeixal, IQueryHandler<GetEventsQuery, EventListResponse> handler) =>
-        {
-            var p = page ?? 1; var ps = pageSize ?? 20;
-            var cacheKey = $"events:{type}:{severity}:{from}:{to}:{bbox}:{lat}:{lng}:{radius}:{insideSeixal}:{p}:{ps}";
-            var result = await handler.HandleAsync(new GetEventsQuery(p, ps, type, severity, from, to, bbox, lat, lng, radius, cacheKey, insideSeixal), default);
-            return Results.Ok(result);
-        }).RequireAuthorization();
+        group.MapGet("/", GetEventsHandler).RequireAuthorization();
         return group;
     }
+
+    #pragma warning disable S107
+    private static async Task<IResult> GetEventsHandler(
+        int? page, int? pageSize, EventType? type, RiskLevel? severity,
+        DateTime? from, DateTime? to, string? bbox, double? lat, double? lng, double? radius,
+        bool? insideSeixal, IQueryHandler<GetEventsQuery, EventListResponse> handler)
+    {
+        var p = page ?? 1; var ps = pageSize ?? 20;
+        var cacheKey = $"events:{type}:{severity}:{from}:{to}:{bbox}:{lat}:{lng}:{radius}:{insideSeixal}:{p}:{ps}";
+        var result = await handler.HandleAsync(new GetEventsQuery(p, ps, type, severity, from, to, bbox, lat, lng, radius, cacheKey, insideSeixal), default);
+        return Results.Ok(result);
+    }
+    #pragma warning restore S107
 }

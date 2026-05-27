@@ -6,6 +6,9 @@ namespace GeoRisk.API.Features.Settings;
 
 public static class SettingsEndpoints
 {
+    private const string AdminOnlyPolicy = "AdminOnly";
+    private const string SettingsTag = "Settings";
+
     public static RouteGroupBuilder MapSettings(this RouteGroupBuilder group)
     {
         group.MapGet("/settings", async (GeoRiskDbContext db) =>
@@ -24,7 +27,7 @@ public static class SettingsEndpoints
                 settings.ActiveProvider,
                 providers.Select(p => new AiProviderConfigDto(
                     p.Id, p.Provider, p.ApiKey, p.Model, p.BaseUrl, p.MaxTokens, p.IsEnabled)).ToList()));
-        }).RequireAuthorization("AdminOnly").WithTags("Settings");
+        }).RequireAuthorization(AdminOnlyPolicy).WithTags(SettingsTag);
 
         group.MapPut("/settings", async (UpdateSettingsRequest request, GeoRiskDbContext db) =>
         {
@@ -62,7 +65,7 @@ public static class SettingsEndpoints
                 settings.ActiveProvider,
                 providers.Select(p => new AiProviderConfigDto(
                     p.Id, p.Provider, p.ApiKey, p.Model, p.BaseUrl, p.MaxTokens, p.IsEnabled)).ToList()));
-        }).RequireAuthorization("AdminOnly").WithTags("Settings");
+        }).RequireAuthorization(AdminOnlyPolicy).WithTags(SettingsTag);
 
         // Get single provider config
         group.MapGet("/settings/providers/{provider}", async (string provider, GeoRiskDbContext db) =>
@@ -71,7 +74,7 @@ public static class SettingsEndpoints
             if (config == null) return Results.NotFound();
             return Results.Ok(new AiProviderConfigDto(
                 config.Id, config.Provider, config.ApiKey, config.Model, config.BaseUrl, config.MaxTokens, config.IsEnabled));
-        }).RequireAuthorization("AdminOnly").WithTags("Settings");
+        }).RequireAuthorization(AdminOnlyPolicy).WithTags(SettingsTag);
 
         // Update single provider config
         group.MapPut("/settings/providers/{provider}", async (string provider, UpdateProviderConfigRequest request, GeoRiskDbContext db) =>
@@ -90,7 +93,7 @@ public static class SettingsEndpoints
 
             return Results.Ok(new AiProviderConfigDto(
                 config.Id, config.Provider, config.ApiKey, config.Model, config.BaseUrl, config.MaxTokens, config.IsEnabled));
-        }).RequireAuthorization("AdminOnly").WithTags("Settings");
+        }).RequireAuthorization(AdminOnlyPolicy).WithTags(SettingsTag);
 
         return group;
     }

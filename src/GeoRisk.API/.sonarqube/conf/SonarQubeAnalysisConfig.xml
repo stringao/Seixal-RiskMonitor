@@ -13,8 +13,6 @@
   <SonarQubeHostUrl>http://localhost:9001</SonarQubeHostUrl>
   <SonarQubeVersion>26.4.0.121862</SonarQubeVersion>
   <SonarProjectKey>georisk-api</SonarProjectKey>
-  <SonarProjectVersion>1.0</SonarProjectVersion>
-  <SonarProjectName>GeoRisk API</SonarProjectName>
   <AdditionalConfig>
     <ConfigSetting Id="BuildUri" />
     <ConfigSetting Id="TfsUri" />
@@ -160,10 +158,12 @@
     <Property Name="sonaranalyzer-vbnet.pluginKey">vbnet</Property>
     <Property Name="sonar.java.jvmframeworkconfig.activate">true</Property>
     <Property Name="sonar.updatecenter.url">https://downloads.sonarsource.com/sonarqube/update/update-center.properties</Property>
-    <Property Name="sonar.core.startTime">24/05/2026 22:53:47</Property>
-    <Property Name="sonar.core.id">9B767396-AZ5b-t7m0F0UJJGUww_g</Property>
+    <Property Name="sonar.core.startTime">27/05/2026 19:25:30</Property>
+    <Property Name="sonar.core.id">E3989BCB-AZ5b-t7m0F0UJJGUww_g</Property>
   </ServerSettings>
-  <LocalSettings />
+  <LocalSettings>
+    <Property Name="sonar.host.url">http://localhost:9001</Property>
+  </LocalSettings>
   <ScannerOptsSettings />
   <AnalyzersSettings>
     <AnalyzerSettings>

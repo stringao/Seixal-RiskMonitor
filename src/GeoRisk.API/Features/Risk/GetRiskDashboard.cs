@@ -7,17 +7,17 @@ namespace GeoRisk.API.Features.Risk;
 
 public sealed record GetRiskDashboardQuery : IQuery<RiskDashboardResponse>;
 
-public sealed class GetRiskDashboardHandler(GeoRiskDbContext db, RiskCalculationService calc)
+public sealed class GetRiskDashboardHandler(GeoRiskDbContext db)
     : IQueryHandler<GetRiskDashboardQuery, RiskDashboardResponse>
 {
     public async Task<RiskDashboardResponse> HandleAsync(GetRiskDashboardQuery query, CancellationToken ct)
     {
         var zones = await db.RiskZones.AsNoTracking().ToListAsync(ct);
-        var scores = await calc.CalculateZoneScoresAsync(db, ct);
+        var scores = await RiskCalculationService.CalculateZoneScoresAsync(db, ct);
 
         var zonesWithScores = zones.Select(z => new RiskZoneResponse(
             z.Id, z.Name, z.Geometry.AsText(),
-            calc.ScoreToRiskLevel(scores.GetValueOrDefault(z.Id, 0)),
+            RiskCalculationService.ScoreToRiskLevel(scores.GetValueOrDefault(z.Id, 0)),
             Math.Round(scores.GetValueOrDefault(z.Id, 0), 2),
             z.CalculatedAt)).ToList();
 

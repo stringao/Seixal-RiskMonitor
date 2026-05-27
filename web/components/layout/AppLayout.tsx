@@ -41,9 +41,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Sidebar />
 
       {/* Main content area - scrollable */}
-      <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-hidden">
-          <div className="animate-fade-in h-full">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto">
+          <div className="h-full animate-fade-in">
             {children}
           </div>
         </main>

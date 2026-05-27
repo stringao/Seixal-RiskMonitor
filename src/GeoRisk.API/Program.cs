@@ -11,10 +11,18 @@ using GeoRisk.API.Features.Auth.Dto;
 using GeoRisk.API.Features.Events;
 using GeoRisk.API.Features.Health;
 using GeoRisk.API.Features.Risk;
+using GeoRisk.API.Features.Risk.Forecast;
 using GeoRisk.API.Features.Alerts;
+using GeoRisk.API.Features.Environment;
 using GeoRisk.API.Features.Insights;
+using GeoRisk.API.Features.Resources;
 using GeoRisk.API.Features.FireStations;
+using GeoRisk.API.Features.FireSpread;
 using GeoRisk.API.Features.Settings;
+using GeoRisk.API.Features.Hotspots;
+using GeoRisk.API.Features.Notifications;
+using GeoRisk.API.Features.Reports;
+using GeoRisk.API.Features.Ai;
 using GeoRisk.API.Infrastructure.AI;
 using GeoRisk.API.Infrastructure.Cache;
 using GeoRisk.API.Infrastructure.ExternalApis;
@@ -60,10 +68,25 @@ try
         .AsImplementedInterfaces()
         .WithScopedLifetime());
 
-    builder.Services.AddSingleton<RiskCalculationService>();
-    builder.Services.AddSingleton<AlertTriggerService>();
+builder.Services.AddScoped<AlertTriggerService>();
+    builder.Services.AddSingleton(new NetTopologySuite.Geometries.GeometryFactory());
+    builder.Services.AddSingleton<SrtmTerrainService>();
+    builder.Services.AddSingleton<TerrainRiskService>();
+    builder.Services.AddSingleton<FireSpreadCalculator>();
+    builder.Services.AddScoped<LandUseService>();
+    builder.Services.AddSingleton<FwiForecastService>();
+    builder.Services.AddSingleton<AirQualityService>();
+    builder.Services.AddSingleton<HotspotAnalysisService>();
+    builder.Services.AddSingleton<EventChainAnalysisService>();
+    builder.Services.AddScoped<ResourceRoutingService>();
+
+    // RAG AI Services
+    builder.Services.AddScoped<RagContextBuilder>();
+    builder.Services.AddScoped<RagQueryService>();
+    builder.Services.AddScoped<SimilaritySearchService>();
 
     // External API HTTP clients
+#pragma warning disable S1075
     builder.Services.AddHttpClient<IIcnfClient, IcnfClient>(client =>
         client.BaseAddress = new Uri("https://www.icnf.pt/"));
 
@@ -73,12 +96,44 @@ try
     builder.Services.AddHttpClient<IAnepcClient, AnepcClient>(client =>
         client.BaseAddress = new Uri("https://www.procivil.pt/"));
 
+    builder.Services.AddHttpClient<IOpenMeteoClient, OpenMeteoClient>(client =>
+        client.BaseAddress = new Uri("https://api.open-meteo.com/"));
+
+    builder.Services.AddHttpClient<IFirmsClient, FirmsClient>(client =>
+        client.BaseAddress = new Uri("https://firms.modaps.eosdis.nasa.gov/"));
+
+    builder.Services.AddHttpClient("OSRM", client =>
+        client.BaseAddress = new Uri("http://localhost:5001"));
+#pragma warning restore S1075
+
+    builder.Services.AddSingleton<SatelliteFireService>();
+
     // Background jobs
     builder.Services.AddHostedService<EventImportJob>();
+    builder.Services.AddHostedService<WeatherRiskUpdateJob>();
+    builder.Services.AddHostedService<FwiForecastJob>();
     builder.Services.AddHostedService<AIClassificationJob>();
     builder.Services.AddHostedService<PatternDetectionJob>();
     builder.Services.AddHostedService<ReportGenerationJob>();
     builder.Services.AddHostedService<AlertEvaluationJob>();
+    builder.Services.AddHostedService<HotspotUpdateJob>();
+    builder.Services.AddHostedService<PushNotificationJob>();
+    builder.Services.AddHostedService<PostIncidentAnalysisJob>();
+    builder.Services.AddHostedService<DashboardGenerationJob>();
+    builder.Services.AddHostedService<LandUseUpdateJob>();
+    builder.Services.AddHostedService<SatelliteFireUpdateJob>();
+    builder.Services.AddHostedService<ResourceStatusUpdateJob>();
+    builder.Services.AddHostedService<EventChainAnalysisJob>();
+    builder.Services.AddScoped<PushNotificationService>();
+    builder.Services.AddScoped<AlertNotificationService>();
+    builder.Services.AddScoped<PostIncidentAnalysisService>();
+    builder.Services.AddScoped<IDashboardGeneratorService, DashboardGeneratorService>();
+    builder.Services.AddScoped<AlertRuleEvaluationEngine>();
+
+    builder.Services.AddHttpClient("WebPush", client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
 
     // AI/LLM providers - read from database at runtime
     builder.Services.AddScoped<OllamaProvider>(sp =>
@@ -241,9 +296,17 @@ try
     var risk = api.MapGroup("/risk")
         .WithTags("Risk");
     risk.MapGetRiskZones();
+    risk.MapGetDetailedRiskZones();
     risk.MapGetRiskDashboard();
     risk.MapCalculateRisk();
     risk.MapCreateRiskZone();
+    risk.MapTerrainEndpoints();
+    risk.MapFuelEndpoints();
+    risk.MapRiskForecast();
+
+    var fireSpread = api.MapGroup("/fires")
+        .WithTags("FireSpread");
+    fireSpread.MapFireSpread();
 
     var alerts = api.MapGroup("/alerts")
         .WithTags("Alerts");
@@ -254,12 +317,37 @@ try
     insights.MapClassifyIncident();
     insights.MapGenerateReport();
     insights.MapDetectPatterns();
+    HotspotsEndpointExtensions.MapHotspots(insights);
+    insights.MapDashboardEndpoints();
+    insights.MapStatistics();
+    insights.MapChainAnalysis();
+
+    var reports = api.MapGroup("/reports")
+        .WithTags("Reports");
+    reports.MapFireReports();
+
+    var ai = api.MapGroup("/ai")
+        .WithTags("AI");
+    ai.MapAiEndpoints();
 
     var fireStations = api.MapGroup("/fire-stations")
         .WithTags("FireStations");
     fireStations.MapFireStations();
 
+    var resources = api.MapGroup("/resources")
+        .WithTags("Resources");
+    resources.MapResources();
+
     api.MapSettings();
+
+    var notifications = api.MapGroup("/notifications")
+        .WithTags("Notifications");
+    notifications.MapNotifications();
+
+    var environment = api.MapGroup("/environment")
+        .WithTags("Environment");
+    environment.MapAirQualityEndpoints();
+    environment.MapSatelliteEndpoints();
 
     if (app.Environment.IsDevelopment())
     {

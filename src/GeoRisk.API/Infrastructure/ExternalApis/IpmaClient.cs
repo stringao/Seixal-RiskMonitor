@@ -26,6 +26,11 @@ public sealed record IpmaFireRisk(
 
 public sealed class IpmaClient : IIpmaClient
 {
+#pragma warning disable S1075
+    private const string WeatherApiUrl = "https://api.ipma.pt/public/cities/{0}/weather";
+    private const string FireRiskApiUrl = "https://api.ipma.pt/public/criticalareas";
+#pragma warning restore S1075
+
     private readonly HttpClient _http;
     private readonly ILogger<IpmaClient> _logger;
 
@@ -39,7 +44,8 @@ public sealed class IpmaClient : IIpmaClient
     {
         try
         {
-            var response = await _http.GetAsync($"https://api.ipma.pt/public/cities/{regionCode}/weather", ct);
+            var url = string.Format(WeatherApiUrl, regionCode);
+            var response = await _http.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("IPMA weather API returned {StatusCode}", response.StatusCode);
@@ -60,7 +66,7 @@ public sealed class IpmaClient : IIpmaClient
     {
         try
         {
-            var response = await _http.GetAsync("https://api.ipma.pt/public/criticalareas", ct);
+            var response = await _http.GetAsync(FireRiskApiUrl, ct);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("IPMA fire risk API returned {StatusCode}", response.StatusCode);
@@ -101,33 +107,53 @@ public sealed class IpmaClient : IIpmaClient
                 root.TryGetProperty("wv", out var wv) ? wv.GetString() ?? "N" : "N",
                 DateTime.UtcNow);
         }
-        catch { }
+        catch { /* Intentionally swallowed: non-critical IPMA parsing failure */ }
         return null;
     }
 
-    private static IReadOnlyList<IpmaFireRisk> ParseFireRiskResponse(string json)
+    private static List<IpmaFireRisk> ParseFireRiskResponse(string json)
     {
         try
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Array)
+            if (root.ValueKind != JsonValueKind.Array)
+                return [];
+
+            var list = new List<IpmaFireRisk>();
+            foreach (var item in root.EnumerateArray())
             {
-                var list = new List<IpmaFireRisk>();
-                foreach (var item in root.EnumerateArray())
-                {
-                    list.Add(new IpmaFireRisk(
-                        item.TryGetProperty("district", out var d) ? d.GetString() ?? "" : "",
-                        item.TryGetProperty("county", out var c) ? c.GetString() ?? "" : "",
-                        item.TryGetProperty("lat", out var lat) ? lat.GetDouble() : 0,
-                        item.TryGetProperty("lon", out var lon) ? lon.GetDouble() : 0,
-                        item.TryGetProperty("riskIndex", out var ri) ? ri.GetInt32() : 0,
-                        item.TryGetProperty("riskLevel", out var rl) ? rl.GetString() ?? "" : ""));
-                }
-                return list;
+                list.Add(ParseIpmaFireRisk(item));
             }
+            return list;
         }
-        catch { }
+        catch { /* Intentionally swallowed: non-critical IPMA parsing failure */ }
         return [];
+    }
+
+    private static IpmaFireRisk ParseIpmaFireRisk(JsonElement item)
+    {
+        return new IpmaFireRisk(
+            GetStringProperty(item, "district"),
+            GetStringProperty(item, "county"),
+            GetDoubleProperty(item, "lat"),
+            GetDoubleProperty(item, "lon"),
+            GetIntProperty(item, "riskIndex"),
+            GetStringProperty(item, "riskLevel"));
+    }
+
+    private static string GetStringProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetString() ?? "" : "";
+    }
+
+    private static double GetDoubleProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetDouble() : 0;
+    }
+
+    private static int GetIntProperty(JsonElement item, string propertyName)
+    {
+        return item.TryGetProperty(propertyName, out var prop) ? prop.GetInt32() : 0;
     }
 }

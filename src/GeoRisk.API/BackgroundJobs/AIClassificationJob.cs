@@ -7,12 +7,12 @@ namespace GeoRisk.API.BackgroundJobs;
 public sealed class AIClassificationJob(
     IServiceScopeFactory scopeFactory, ILogger<AIClassificationJob> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
-        while (await timer.WaitForNextTickAsync(ct))
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            await ClassifyEventsAsync(ct);
+            await ClassifyEventsAsync(stoppingToken);
         }
     }
 

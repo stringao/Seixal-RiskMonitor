@@ -5,6 +5,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 #nullable disable
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+#pragma warning disable S1192 // String literals should not be duplicated
 
 namespace GeoRisk.API.Migrations
 {

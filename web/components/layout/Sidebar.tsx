@@ -14,6 +14,9 @@ import {
   ChevronRight,
   User,
   ChevronDown,
+  Flame,
+  Activity,
+  Mountain,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { AlertBadge } from "@/components/alerts/AlertBadge";
@@ -21,6 +24,9 @@ import { AlertBadge } from "@/components/alerts/AlertBadge";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/map", label: "Mapa", icon: Map },
+  { href: "/terrain", label: "Terreno", icon: Mountain },
+  { href: "/risk-zones", label: "Zonas de Risco", icon: Flame },
+  { href: "/fire-spread", label: "Simulação Fogo", icon: Activity },
   { href: "/insights", label: "Insights", icon: Shield },
   { href: "/alerts", label: "Alertas", icon: Bell },
 ];

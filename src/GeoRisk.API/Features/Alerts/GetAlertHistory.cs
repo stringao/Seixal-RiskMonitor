@@ -35,7 +35,7 @@ public sealed class GetAlertHistoryHandler(
         var totalCount = await q.CountAsync(ct);
         var items = await q.OrderByDescending(a => a.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(a => new AlertResponse(a.Id, a.Title, a.Severity, a.Message, a.GeoEventId, a.IsRead, a.CreatedAt))
+            .Select(a => new AlertResponse(a.Id, a.Title, a.Severity, a.Message, a.GeoEventId, a.IsRead, a.CreatedAt, a.AlertRuleId, null, a.FwiValue, a.WindSpeed, a.Temperature, a.AreaKm2, a.IsEscalated, a.EscalatedFromAlertId, a.ExpiresAt))
             .ToListAsync(ct);
 
         var result = new AlertListResponse(items, totalCount, page, pageSize);

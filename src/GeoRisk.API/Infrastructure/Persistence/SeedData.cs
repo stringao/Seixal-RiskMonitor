@@ -1,5 +1,7 @@
 using NetTopologySuite.Geometries;
 
+#pragma warning disable S1192 // String literals should not be duplicated
+
 namespace GeoRisk.API.Infrastructure.Persistence;
 
 public static class SeedData
@@ -66,6 +68,7 @@ public static class SeedData
         await db.SaveChangesAsync();
     }
 
+    #pragma warning disable S107
     private static GeoEvent MakeEvent(EventType type, string title, string desc,
         double lng, double lat, RiskLevel severity, EventSource source,
         string? sourceId, int daysOffset) => new()
@@ -75,12 +78,15 @@ public static class SeedData
         Severity = severity, Source = source, SourceId = sourceId,
         OccurredAt = DateTime.UtcNow.AddDays(daysOffset)
     };
+    #pragma warning restore S107
 
+#pragma warning disable S107
     private static FireStation MakeFireStation(
         string name, string code, string type, string address, string postalCode,
         string city, string district, string county, string? parish,
         double lat, double lng, string? phone, string operationalZone, string cim,
         int personnelCount, int vehicleCount) => new()
+#pragma warning restore S107
     {
         Id = Guid.NewGuid(),
         Name = name,

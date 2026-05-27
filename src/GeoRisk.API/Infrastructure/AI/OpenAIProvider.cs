@@ -6,6 +6,10 @@ namespace GeoRisk.API.Infrastructure.AI;
 
 public class OpenAIProvider : ILlmProvider
 {
+#pragma warning disable S1075
+    private const string ApiBaseUrl = "https://api.openai.com/v1/chat/completions";
+#pragma warning restore S1075
+
     private readonly HttpClient _httpClient;
     private readonly ILlmSettingsService _settingsService;
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -36,7 +40,7 @@ public class OpenAIProvider : ILlmProvider
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
@@ -63,7 +67,7 @@ public class OpenAIProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
@@ -72,7 +76,7 @@ public class OpenAIProvider : ILlmProvider
         return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize response");
     }
 
-    private record OpenAIResponse(List<OpenAIChoice>? Choices);
-    private record OpenAIChoice(OpenAIMessage? Message);
-    private record OpenAIMessage(string Content);
+    private sealed record OpenAIResponse(List<OpenAIChoice>? Choices);
+    private sealed record OpenAIChoice(OpenAIMessage? Message);
+    private sealed record OpenAIMessage(string Content);
 }

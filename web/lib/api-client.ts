@@ -88,3 +88,23 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+// ─── Risk Zones ──────────────────────────────────────────────
+
+export async function getDetailedRiskZones(minRiskLevel?: string) {
+  const params = minRiskLevel ? { minRiskLevel } : {};
+  const { data } = await apiClient.get("/risk/zones/detailed", { params });
+  return data;
+}
+
+// ─── Fire Spread ─────────────────────────────────────────────
+
+export async function getFireSpread(fireEventId: string) {
+  const { data } = await apiClient.get(`/fires/${fireEventId}/spread`);
+  return data;
+}
+
+export async function getActiveFiresSpread() {
+  const { data } = await apiClient.get("/fires/active/spread");
+  return data;
+}

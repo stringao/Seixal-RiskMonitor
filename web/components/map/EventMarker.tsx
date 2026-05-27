@@ -33,53 +33,78 @@ interface EventMarkerProps {
   onClick?: (eventId: string) => void;
 }
 
-function createEventIcon(eventType: string, severity: string, isSelected: boolean, dimmed: boolean): L.DivIcon {
-  const color = SEVERITY_COLORS[severity] ?? "#94a3b8";
-  const path = TYPE_PATHS[eventType];
-  
-  // Size changes based on selection state
-  const baseSize = isSelected ? 48 : (dimmed ? 28 : 36);
-  const opacity = dimmed ? 0.3 : 1;
+function createFallbackIcon(color: string, baseSize: number, isSelected: boolean, opacity: number): L.DivIcon {
+  return L.divIcon({
+    className: isSelected ? "custom-marker selected-marker" : "custom-marker",
+    html: `<div style="
+      background-color: ${color};
+      width: ${isSelected ? 24 : 18}px; 
+      height: ${isSelected ? 24 : 18}px;
+      border-radius: 50%;
+      border: ${isSelected ? 3 : 2}px solid white;
+      box-shadow: ${isSelected 
+        ? `0 0 0 4px ${color}40, 0 0 20px ${color}` 
+        : `0 0 8px ${color}80`};
+      opacity: ${opacity};
+      animation: ${isSelected ? 'pulse-ring 1.5s ease-out infinite' : 'none'};
+    "></div>`,
+    iconSize: [baseSize, baseSize],
+    iconAnchor: [baseSize / 2, baseSize / 2],
+  });
+}
 
-  if (!path) {
-    return L.divIcon({
-      className: isSelected ? "custom-marker selected-marker" : "custom-marker",
-      html: `<div style="
-        background-color: ${color};
-        width: ${isSelected ? 24 : 18}px; 
-        height: ${isSelected ? 24 : 18}px;
-        border-radius: 50%;
-        border: ${isSelected ? 3 : 2}px solid white;
-        box-shadow: ${isSelected 
-          ? `0 0 0 4px ${color}40, 0 0 20px ${color}` 
-          : `0 0 8px ${color}80`};
-        opacity: ${opacity};
-        animation: ${isSelected ? 'pulse-ring 1.5s ease-out infinite' : 'none'};
-      "></div>`,
-      iconSize: [baseSize, baseSize],
-      iconAnchor: [baseSize / 2, baseSize / 2],
-    });
-  }
-
+function buildSvgIcon(path: string, color: string, baseSize: number, opacity: number, isSelected: boolean): string {
   const glowStyle = isSelected 
     ? `filter: drop-shadow(0 0 8px ${color}) drop-shadow(0 0 16px ${color}80);` 
     : "";
 
+  const pulseRing = isSelected 
+    ? `<circle cx="12" cy="12" r="11" fill="${color}" opacity="0.3" class="pulse-ring"/>` 
+    : "";
+  const outerRing = `<circle cx="12" cy="12" r="${isSelected ? 10 : 11}" fill="${color}" opacity="${isSelected ? 0.3 : 0.2}"/>`;
+  const innerRing = `<circle cx="12" cy="12" r="${isSelected ? 7 : 8.5}" fill="${color}" opacity="${isSelected ? 0.5 : 0.4}"/>`;
+  const iconPath = `<path d="${path}" fill="white" transform="translate(2,2) scale(0.83)"/>`;
+  const strokeRing = `<circle cx="12" cy="12" r="11" fill="none" stroke="${color}" stroke-width="${isSelected ? 2 : 1.5}"/>`;
+  const pulseRingOuter = isSelected 
+    ? `<circle cx="12" cy="12" r="12" fill="none" stroke="${color}" stroke-width="2" opacity="0.6" class="pulse-ring"/>` 
+    : "";
+
+  return `
+    <svg width="${baseSize}" height="${baseSize}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="${glowStyle} opacity: ${opacity};">
+      ${pulseRing}
+      ${outerRing}
+      ${innerRing}
+      ${iconPath}
+      ${strokeRing}
+      ${pulseRingOuter}
+    </svg>
+  `;
+}
+
+function createSvgIcon(eventType: string, severity: string, baseSize: number, opacity: number, isSelected: boolean): L.DivIcon {
+  const color = SEVERITY_COLORS[severity] ?? "#94a3b8";
+  const path = TYPE_PATHS[eventType] ?? "";
+
   return L.divIcon({
     className: isSelected ? "custom-marker selected-marker" : "custom-marker",
-    html: `
-      <svg width="${baseSize}" height="${baseSize}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="${glowStyle} opacity: ${opacity};">
-        ${isSelected ? `<circle cx="12" cy="12" r="11" fill="${color}" opacity="0.3" class="pulse-ring"/>` : ''}
-        <circle cx="12" cy="12" r="${isSelected ? 10 : 11}" fill="${color}" opacity="${isSelected ? 0.3 : 0.2}"/>
-        <circle cx="12" cy="12" r="${isSelected ? 7 : 8.5}" fill="${color}" opacity="${isSelected ? 0.5 : 0.4}"/>
-        <path d="${path}" fill="white" transform="translate(2,2) scale(0.83)"/>
-        <circle cx="12" cy="12" r="11" fill="none" stroke="${color}" stroke-width="${isSelected ? 2 : 1.5}"/>
-        ${isSelected ? `<circle cx="12" cy="12" r="12" fill="none" stroke="${color}" stroke-width="2" opacity="0.6" class="pulse-ring"/>` : ''}
-      </svg>
-    `,
+    html: buildSvgIcon(path, color, baseSize, opacity, isSelected),
     iconSize: [baseSize, baseSize],
     iconAnchor: [baseSize / 2, baseSize / 2],
   });
+}
+
+function createEventIcon(eventType: string, severity: string, isSelected: boolean, dimmed: boolean): L.DivIcon {
+  const color = SEVERITY_COLORS[severity] ?? "#94a3b8";
+  const path = TYPE_PATHS[eventType];
+  
+  const baseSize = isSelected ? 48 : (dimmed ? 28 : 36);
+  const opacity = dimmed ? 0.3 : 1;
+
+  if (!path) {
+    return createFallbackIcon(color, baseSize, isSelected, opacity);
+  }
+
+  return createSvgIcon(eventType, severity, baseSize, opacity, isSelected);
 }
 
 export function EventMarker({ event, isSelected = false, dimmed = false, onClick }: EventMarkerProps) {

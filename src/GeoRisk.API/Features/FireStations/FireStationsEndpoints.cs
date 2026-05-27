@@ -6,6 +6,8 @@ namespace GeoRisk.API.Features.FireStations;
 
 public static class FireStationsEndpoints
 {
+    private const string FireStationsTag = "FireStations";
+
     public static RouteGroupBuilder MapFireStations(this RouteGroupBuilder group)
     {
         group.MapGetFireStations();
@@ -61,7 +63,7 @@ public static class FireStationsEndpoints
 
             return Results.Ok(new FireStationListResponse(stations));
         }).WithName("GetFireStations")
-        .WithTags("FireStations")
+        .WithTags(FireStationsTag)
         .WithDescription("Get all fire stations with optional filters")
         .RequireAuthorization();
     }
@@ -100,7 +102,7 @@ public static class FireStationsEndpoints
 
             return Results.Ok(station);
         }).WithName("GetFireStationById")
-        .WithTags("FireStations")
+        .WithTags(FireStationsTag)
         .WithDescription("Get a fire station by ID")
         .RequireAuthorization();
     }
@@ -139,7 +141,7 @@ public static class FireStationsEndpoints
 
             return Results.Ok(new NearestFireStationListResponse(stations));
         }).WithName("GetNearestFireStations")
-        .WithTags("FireStations")
+        .WithTags(FireStationsTag)
         .WithDescription("Get the nearest fire stations to a given location")
         .RequireAuthorization();
     }
@@ -149,7 +151,7 @@ public static class FireStationsEndpoints
         group.MapGet("/by-county/{county}", async (string county, GeoRiskDbContext db, bool includeInactive = false) =>
         {
             var query = db.FireStations.AsNoTracking()
-                .Where(f => f.County.ToLower() == county.ToLower());
+                .Where(f => string.Equals(f.County, county, StringComparison.OrdinalIgnoreCase));
 
             if (!includeInactive)
                 query = query.Where(f => f.IsActive);
@@ -181,7 +183,7 @@ public static class FireStationsEndpoints
 
             return Results.Ok(new FireStationListResponse(stations));
         }).WithName("GetFireStationsByCounty")
-        .WithTags("FireStations")
+        .WithTags(FireStationsTag)
         .WithDescription("Get fire stations by county")
         .RequireAuthorization();
     }

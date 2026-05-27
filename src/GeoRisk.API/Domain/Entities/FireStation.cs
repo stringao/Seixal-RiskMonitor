@@ -59,6 +59,8 @@ public class FireStation
 
     public bool IsActive { get; set; } = true;
 
+    public ICollection<FireResource> FireResources { get; set; } = new List<FireResource>();
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

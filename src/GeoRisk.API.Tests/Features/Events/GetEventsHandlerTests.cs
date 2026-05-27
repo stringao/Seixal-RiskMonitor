@@ -82,7 +82,7 @@ public sealed class GetEventsHandlerTests
 
         // Assert
         result.Items.Should().HaveCount(2);
-        result.Items.Should().OnlyContain(e => e.EventType == EventType.Fire);
+        result.Items.Should().OnlyContain(e => e.EventType == "Fire");
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class GetEventsHandlerTests
 
         // Assert
         result.Items.Should().HaveCount(2);
-        result.Items.Should().OnlyContain(e => e.Severity == RiskLevel.High);
+        result.Items.Should().OnlyContain(e => e.Severity == "High");
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class GetEventsHandlerTests
         var dbName = $"get_events_cached_{Guid.NewGuid()}";
         using var db = CreateDbContext(dbName);
         var cachedResult = new EventListResponse(
-            new List<EventResponse> { new(Guid.NewGuid(), EventType.Fire, "Cached", null, 0, 0, RiskLevel.Low, EventSource.Manual, DateTime.UtcNow, null, null, DateTime.UtcNow) },
+            new List<EventResponse> { new(Guid.NewGuid(), "Fire", "Cached", null, 0, 0, "Low", "Manual", DateTime.UtcNow, null, null, DateTime.UtcNow) },
             1, 1, 10);
         var cache = new Mock<ICacheService>();
         cache.Setup(c => c.GetAsync<EventListResponse>("cache:hit", It.IsAny<CancellationToken>()))

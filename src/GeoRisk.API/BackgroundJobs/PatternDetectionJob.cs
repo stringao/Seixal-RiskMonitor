@@ -7,12 +7,12 @@ namespace GeoRisk.API.BackgroundJobs;
 public sealed class PatternDetectionJob(
     IServiceScopeFactory scopeFactory, ILogger<PatternDetectionJob> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromHours(24));
-        while (await timer.WaitForNextTickAsync(ct))
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            await DetectPatternsAsync(ct);
+            await DetectPatternsAsync(stoppingToken);
         }
     }
 
@@ -22,9 +22,6 @@ public sealed class PatternDetectionJob(
 
         try
         {
-            using var scope = scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
-
             await DetectClusterPatternsAsync(ct);
             await DetectTemporalPatternsAsync(ct);
             await DetectEscalationPatternsAsync(ct);
@@ -67,7 +64,7 @@ public sealed class PatternDetectionJob(
             .Select(g => new { Date = g.Key, Count = g.Count() })
             .ToListAsync(ct);
 
-        var avgDaily = dailyCounts.Any() ? dailyCounts.Average(x => x.Count) : 0;
+        var avgDaily = dailyCounts.Count > 0 ? dailyCounts.Average(x => x.Count) : 0;
         var todayCount = dailyCounts.FirstOrDefault(x => x.Date == DateTime.UtcNow.Date)?.Count ?? 0;
 
         if (todayCount > avgDaily * 2 && todayCount > 5)
