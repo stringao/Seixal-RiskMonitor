@@ -20,7 +20,8 @@ public static class AlertsEndpoints
             var rules = await db.AlertRules.AsNoTracking()
                 .OrderByDescending(r => r.CreatedAt)
                 .Select(r => new AlertRuleResponse(
-                    r.Id, r.Name, r.EventType, r.SeverityThreshold,
+                    r.Id, r.Name, r.EventType.HasValue ? Enum.GetName(r.EventType.Value) : null,
+                    r.SeverityThreshold.HasValue ? Enum.GetName(r.SeverityThreshold.Value) : null,
                     r.Area != null ? r.Area.AsText() : null, r.IsActive, r.CreatedAt))
                 .ToListAsync();
             return Results.Ok(new AlertRuleListResponse(rules));

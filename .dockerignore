@@ -1,0 +1,13 @@
+**/*.Tests.csproj
+**/Tests/**
+**/*.test.ts
+**/__tests__/**
+**/test-results/**
+**/coverage/**
+**/.git/**
+**/node_modules/**
+**/.next/**
+**/obj/**
+**/bin/**
+*.sln
+src/GeoRisk.API.Tests/

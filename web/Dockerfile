@@ -18,14 +18,15 @@ RUN npm run build
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
-# Install serve to serve production build
-RUN npm install -g serve
-
 # Copy built files
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
+COPY --from=build /app/package-lock.json ./
+
+# Install next globally for start command
+RUN npm install -g next
 
 # Expose port
 EXPOSE 3000
@@ -34,5 +35,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start
-CMD ["serve", "-s", ".next", "-l", "3000", "-n"]
+# Start Next.js
+CMD ["next", "start"]

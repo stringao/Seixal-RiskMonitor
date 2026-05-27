@@ -1,10 +1,11 @@
 using GeoRisk.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GeoRisk.API.BackgroundJobs;
 
 public sealed class AIClassificationJob(
-    GeoRiskDbContext db, ILogger<AIClassificationJob> logger) : BackgroundService
+    IServiceScopeFactory scopeFactory, ILogger<AIClassificationJob> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -21,6 +22,9 @@ public sealed class AIClassificationJob(
 
         try
         {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
             var unclassified = await db.GeoEvents
                 .Where(e => e.AIClassification == null)
                 .Take(50)

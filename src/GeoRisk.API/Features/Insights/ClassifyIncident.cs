@@ -21,6 +21,12 @@ public sealed class ClassifyIncidentHandler(
 {
     public async Task<ClassifyIncidentResult> HandleAsync(ClassifyIncidentCommand cmd, CancellationToken ct)
     {
+        var settings = await db.AppSettings.FirstOrDefaultAsync(ct);
+        if (settings == null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            throw new InvalidOperationException("AI features are not configured. Please configure the API key in Settings.");
+        }
+
         var geoEvent = await db.GeoEvents.FirstOrDefaultAsync(e => e.Id == cmd.EventId, ct)
             ?? throw new InvalidOperationException($"Event {cmd.EventId} not found");
 

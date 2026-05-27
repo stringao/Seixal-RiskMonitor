@@ -18,8 +18,13 @@ public class AnthropicProvider : ILlmProvider
     public AnthropicProvider(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _apiKey = configuration.GetSection("Anthropic")["ApiKey"]
-            ?? throw new InvalidOperationException("Anthropic:ApiKey is not configured");
+        _apiKey = configuration.GetSection("Anthropic")["ApiKey"] ?? "";
+    }
+
+    private void EnsureApiKey()
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+            throw new InvalidOperationException("Anthropic:ApiKey is not configured");
     }
 
     public async Task<string> CompleteAsync(string system, string user, CancellationToken ct = default)
@@ -32,6 +37,7 @@ public class AnthropicProvider : ILlmProvider
             messages = new[] { new { role = "user", content = user } }
         };
 
+        EnsureApiKey();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
         req.Headers.Add("x-api-key", _apiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");
@@ -54,6 +60,7 @@ public class AnthropicProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
+        EnsureApiKey();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
         req.Headers.Add("x-api-key", _apiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");

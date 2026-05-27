@@ -1,3 +1,4 @@
+// Event DTOs - ensure enum names serialize as strings
 namespace GeoRisk.API.Features.Events.Dto;
 
 public sealed record CreateEventRequest(
@@ -6,8 +7,8 @@ public sealed record CreateEventRequest(
     EventSource Source, DateTime OccurredAt, string? Metadata);
 
 public sealed record EventResponse(
-    Guid Id, EventType EventType, string Title, string? Description,
-    double Latitude, double Longitude, RiskLevel Severity, EventSource Source,
+    Guid Id, string EventType, string Title, string? Description,
+    double Latitude, double Longitude, string Severity, string Source,
     DateTime OccurredAt, string? AIClassification, string? AIInsight, DateTime CreatedAt);
 
 public sealed record EventListResponse(

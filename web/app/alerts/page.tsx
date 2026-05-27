@@ -6,26 +6,31 @@ import { useAlerts } from "@/lib/hooks/useAlerts";
 import { AlertList } from "@/components/alerts/AlertList";
 import type { AlertSeverity } from "@/lib/types/alert";
 import { Settings } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { pt } from "date-fns/locale";
 
 export default function AlertsPage() {
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | "">("");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
-  const { data, loading, markRead, refresh } = useAlerts({
+  const { data, loading, markRead, refresh, loadMore, hasMore } = useAlerts({
     severity: severityFilter || undefined,
     isRead: showUnreadOnly ? false : undefined,
   });
 
   const alerts = data?.items ?? [];
+  const lastUpdate = data ? formatDistanceToNow(new Date(), { addSuffix: true, locale: pt }) : null;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-white">Alertas</h2>
-          <p className="text-sm text-slate-400 mt-1">Gerir alertas e notificações</p>
+          {lastUpdate && (
+            <p className="text-xs text-slate-500 mt-1">Atualizado {lastUpdate}</p>
+          )}
         </div>
         <Link
-          href="/dashboard/alerts/rules"
+          href="/alerts/rules"
           className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
         >
           <Settings className="w-4 h-4" />
@@ -63,8 +68,8 @@ export default function AlertsPage() {
         onMarkRead={(id) => markRead({ alertIds: [id] })}
         onMarkAllRead={() => markRead({ markAllRead: true })}
         onRefresh={refresh}
-        hasMore={data ? data.page * data.pageSize < data.totalCount : false}
-        onLoadMore={() => {}}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
       />
     </div>
   );

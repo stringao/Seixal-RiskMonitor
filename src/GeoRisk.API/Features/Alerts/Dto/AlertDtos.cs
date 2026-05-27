@@ -17,23 +17,23 @@ public sealed record AlertListResponse(
 
 public sealed record CreateAlertRuleRequest(
     string Name,
-    EventType? EventType,
-    RiskLevel? SeverityThreshold,
+    string? EventType,
+    string? SeverityThreshold,
     string? AreaWkt,
     bool IsActive);
 
 public sealed record UpdateAlertRuleRequest(
     string? Name,
-    EventType? EventType,
-    RiskLevel? SeverityThreshold,
+    string? EventType,
+    string? SeverityThreshold,
     string? AreaWkt,
     bool? IsActive);
 
 public sealed record AlertRuleResponse(
     Guid Id,
     string Name,
-    EventType? EventType,
-    RiskLevel? SeverityThreshold,
+    string? EventType,
+    string? SeverityThreshold,
     string? AreaWkt,
     bool IsActive,
     DateTime CreatedAt);

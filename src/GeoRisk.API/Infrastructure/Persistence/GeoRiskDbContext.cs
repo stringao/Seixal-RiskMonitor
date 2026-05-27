@@ -8,6 +8,8 @@ public class GeoRiskDbContext(DbContextOptions<GeoRiskDbContext> options) : DbCo
     public DbSet<AlertRule> AlertRules => Set<AlertRule>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+    public DbSet<FireStation> FireStations => Set<FireStation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +27,12 @@ public class GeoRiskDbContext(DbContextOptions<GeoRiskDbContext> options) : DbCo
                 geoEvent.UpdatedAt = DateTime.UtcNow;
                 if (entry.State == EntityState.Added)
                     geoEvent.CreatedAt = DateTime.UtcNow;
+            }
+            if (entry.Entity is FireStation fireStation)
+            {
+                fireStation.UpdatedAt = DateTime.UtcNow;
+                if (entry.State == EntityState.Added)
+                    fireStation.CreatedAt = DateTime.UtcNow;
             }
         }
 

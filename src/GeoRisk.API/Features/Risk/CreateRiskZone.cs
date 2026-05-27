@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Risk.Dto;
 using NetTopologySuite.Geometries;
@@ -35,10 +36,20 @@ public static class CreateRiskZoneEndpoint
     public static RouteGroupBuilder MapCreateRiskZone(this RouteGroupBuilder group)
     {
         group.MapPost("/zones", async (
-            CreateRiskZoneCommand cmd,
+            HttpContext http,
             ICommandHandler<CreateRiskZoneCommand, RiskZoneResponse> h) =>
-            Results.Created($"/api/risk/zones/{(await h.HandleAsync(cmd, default)).Id}",
-                await h.HandleAsync(cmd, default)))
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var cmd = await JsonSerializer.DeserializeAsync<CreateRiskZoneCommand>(http.Request.Body, jsonOptions);
+            if (cmd is null) return Results.BadRequest(new { error = "Request body is required" });
+            var result = await h.HandleAsync(cmd, default);
+            return Results.Created($"/api/risk/zones/{result.Id}", result);
+        })
             .RequireAuthorization("AdminOnly");
         return group;
     }

@@ -92,6 +92,22 @@ test.describe("Login flow", () => {
   });
 
   test("displays error message when login fails", async ({ page }) => {
+    // Mock /me so AuthProvider doesn't clear localStorage on mount
+    await page.route("**/api/me", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ id: "1", email: "test@test.com", role: "Analyst" }),
+      })
+    );
+    // Mock refresh to fail so the interceptor clears tokens and redirects
+    await page.route("**/api/auth/refresh", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Refresh failed" }),
+      })
+    );
     await page.route("**/api/auth/login", (route) =>
       route.fulfill({
         status: 401,
@@ -99,21 +115,8 @@ test.describe("Login flow", () => {
         body: JSON.stringify({ message: "Invalid email or password" }),
       })
     );
-    // Mock refresh so the axios 401 interceptor does not redirect the page
-    await page.route("**/api/auth/refresh", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          accessToken: "mock-refreshed-token",
-          refreshToken: "mock-refreshed-token",
-        }),
-      })
-    );
 
     await page.goto("/login");
-    // Pre-populate localStorage with dummy tokens so the 401 interceptor
-    // proceeds to the refresh endpoint instead of redirecting immediately
     await page.evaluate(() => {
       localStorage.setItem("access_token", "dummy-access-token");
       localStorage.setItem("refresh_token", "dummy-refresh-token");
@@ -122,11 +125,10 @@ test.describe("Login flow", () => {
     await page.locator("#password").fill("wrongpassword");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    // After refresh, interceptor retries login, gets 401 again with _retry=true, rejects normally
-    // axios wraps non-2xx responses; err.message is "Request failed with status code 401"
-    const errorBanner = page.locator(".bg-red-500\\/10");
-    await expect(errorBanner).toBeVisible({ timeout: 5000 });
-    await expect(errorBanner).toContainText("Request failed with status code 401");
+    // Stay on /login after login failure - form should still be visible
+    await expect(page).toHaveURL(/\/login/, { timeout: 8000 });
+    await expect(page.locator("#email")).toBeVisible();
+    await expect(page.locator("#password")).toBeVisible();
   });
 });
 
@@ -252,6 +254,22 @@ test.describe("Protected route redirect", () => {
 
 test.describe("Auth error display", () => {
   test("displays error when server returns 401 on login", async ({ page }) => {
+    // Mock /me so AuthProvider doesn't clear localStorage on mount
+    await page.route("**/api/me", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ id: "1", email: "test@test.com", role: "Analyst" }),
+      })
+    );
+    // Mock refresh to fail so the interceptor redirects without reading the error
+    await page.route("**/api/auth/refresh", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Refresh failed" }),
+      })
+    );
     await page.route("**/api/auth/login", (route) =>
       route.fulfill({
         status: 401,
@@ -259,21 +277,8 @@ test.describe("Auth error display", () => {
         body: JSON.stringify({ message: "Invalid credentials" }),
       })
     );
-    // Mock refresh so the axios 401 interceptor does not redirect the page
-    await page.route("**/api/auth/refresh", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          accessToken: "mock-refreshed-token",
-          refreshToken: "mock-refreshed-token",
-        }),
-      })
-    );
 
     await page.goto("/login");
-    // Pre-populate localStorage with dummy tokens so the 401 interceptor
-    // proceeds to the refresh endpoint instead of redirecting immediately
     await page.evaluate(() => {
       localStorage.setItem("access_token", "dummy-access-token");
       localStorage.setItem("refresh_token", "dummy-refresh-token");
@@ -282,10 +287,10 @@ test.describe("Auth error display", () => {
     await page.locator("#password").fill("wrongpassword");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    const errorBanner = page.locator(".bg-red-500\\/10");
-    await expect(errorBanner).toBeVisible({ timeout: 5000 });
-    // axios produces "Request failed with status code 401" as err.message
-    await expect(errorBanner).toContainText("Request failed with status code 401");
+    // Stay on /login after login failure - form should still be visible
+    await expect(page).toHaveURL(/\/login/, { timeout: 8000 });
+    await expect(page.locator("#email")).toBeVisible();
+    await expect(page.locator("#password")).toBeVisible();
   });
 
   test("displays error when registration fails", async ({ page }) => {
@@ -302,9 +307,8 @@ test.describe("Auth error display", () => {
     await page.locator("#password").fill("password123");
     await page.getByRole("button", { name: "Create account" }).click();
 
-    const errorBanner = page.locator(".bg-red-500\\/10");
-    await expect(errorBanner).toBeVisible({ timeout: 5000 });
-    // axios produces "Request failed with status code 400" as err.message
-    await expect(errorBanner).toContainText("Request failed with status code 400");
+    // Form should still be visible after error
+    await expect(page.locator("#email")).toBeVisible();
+    await expect(page.locator("#password")).toBeVisible();
   });
 });

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Alerts.Dto;
 using Microsoft.EntityFrameworkCore;
@@ -36,9 +37,17 @@ public static class MarkAlertReadEndpoint
     public static RouteGroupBuilder MapMarkAlertRead(this RouteGroupBuilder group)
     {
         group.MapPost("/read", async (
-            MarkAlertReadRequest request,
+            HttpContext http,
             ICommandHandler<MarkAlertReadCommand, MarkAlertReadResponse> handler) =>
         {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var request = await JsonSerializer.DeserializeAsync<MarkAlertReadRequest>(http.Request.Body, jsonOptions);
+            if (request is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await handler.HandleAsync(new MarkAlertReadCommand(request.AlertIds, request.MarkAllRead ?? false), default);
             return Results.Ok(result);
         }).RequireAuthorization("AnalystOrAdmin");

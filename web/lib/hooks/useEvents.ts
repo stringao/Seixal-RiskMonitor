@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchEvents } from "@/lib/api/events";
 import type { EventFilters, EventListResponse } from "@/lib/types/event";
 
-export function useEvents(filters: EventFilters = {}) {
+export function useEvents(filters: EventFilters = {}, refreshKey: number = 0) {
   const [data, setData] = useState<EventListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function useEvents(filters: EventFilters = {}) {
     return () => {
       cancelled = true;
     };
-  }, [filters.type, filters.severity, filters.from, filters.to, filters.page, filters.pageSize]);
+  }, [filters.type, filters.severity, filters.from, filters.to, filters.page, filters.pageSize, refreshKey]);
 
   return { data, loading, error };
 }

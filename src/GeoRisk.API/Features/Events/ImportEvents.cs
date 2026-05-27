@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Events.Dto;
 using GeoRisk.API.Infrastructure.Cache;
@@ -37,9 +38,17 @@ public static class ImportEventsEndpoint
 {
     public static RouteGroupBuilder MapImportEvents(this RouteGroupBuilder group)
     {
-        group.MapPost("/import", async (List<ImportEventItem> items,
+        group.MapPost("/import", async (HttpContext http,
             ICommandHandler<ImportEventsCommand, ImportEventsResponse> handler) =>
         {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var items = await JsonSerializer.DeserializeAsync<List<ImportEventItem>>(http.Request.Body, jsonOptions);
+            if (items is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await handler.HandleAsync(new ImportEventsCommand(items), default);
             return Results.Ok(result);
         }).RequireAuthorization("AdminOnly");

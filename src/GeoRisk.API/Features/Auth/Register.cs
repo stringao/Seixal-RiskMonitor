@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeoRisk.API.Auth;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Auth.Dto;
@@ -55,9 +56,17 @@ public static class RegisterEndpoint
     public static RouteGroupBuilder MapRegister(this RouteGroupBuilder group)
     {
         group.MapPost("/register", async (
-            RegisterCommand cmd,
+            HttpContext http,
             ICommandHandler<RegisterCommand, AuthResponse> handler) =>
         {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var cmd = await JsonSerializer.DeserializeAsync<RegisterCommand>(http.Request.Body, jsonOptions);
+            if (cmd is null) return Results.BadRequest(new { error = "Request body is required" });
             var result = await handler.HandleAsync(cmd, default);
             return Results.Ok(result);
         });

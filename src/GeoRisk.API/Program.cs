@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using FluentValidation;
 using GeoRisk.API.Auth;
@@ -12,6 +13,8 @@ using GeoRisk.API.Features.Health;
 using GeoRisk.API.Features.Risk;
 using GeoRisk.API.Features.Alerts;
 using GeoRisk.API.Features.Insights;
+using GeoRisk.API.Features.FireStations;
+using GeoRisk.API.Features.Settings;
 using GeoRisk.API.Infrastructure.AI;
 using GeoRisk.API.Infrastructure.Cache;
 using GeoRisk.API.Infrastructure.ExternalApis;
@@ -58,6 +61,7 @@ try
         .WithScopedLifetime());
 
     builder.Services.AddSingleton<RiskCalculationService>();
+    builder.Services.AddSingleton<AlertTriggerService>();
 
     // External API HTTP clients
     builder.Services.AddHttpClient<IIcnfClient, IcnfClient>(client =>
@@ -110,6 +114,7 @@ try
         return ConnectionMultiplexer.Connect(redisConn);
     });
     builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+    builder.Services.AddSingleton<ISyncStatusService, SyncStatusService>();
 
     builder.Services.AddAuthorizationBuilder()
         .AddPolicy("AnalystOrAdmin", policy => policy.RequireRole("Analyst", "Admin"))
@@ -147,6 +152,7 @@ try
         };
     });
 
+    builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddOpenApiDocument(options =>
     {
         options.Title = "GeoRisk API";
@@ -154,17 +160,33 @@ try
         options.DocumentName = "GeoRisk";
     });
 
+    builder.Services.ConfigureHttpJsonOptions(options =>
+    {
+        options.SerializerOptions.PropertyNameCaseInsensitive = true;
+        options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
+    builder.Services.AddProblemDetails();
+
     var app = builder.Build();
 
-    app.UseExceptionHandler(errorApp =>
+    if (app.Environment.IsDevelopment())
     {
-        errorApp.Run(async context =>
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler(errorApp =>
         {
-            context.Response.StatusCode = 500;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync("{\"error\":\"Internal server error\"}");
+            errorApp.Run(async context =>
+            {
+                context.Response.StatusCode = 500;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync("{\"error\":\"Internal server error\"}");
+            });
         });
-    });
+    }
 
     app.UseSerilogRequestLogging();
 
@@ -179,6 +201,7 @@ try
     app.UseAuthorization();
 
     var api = app.MapGroup("/api");
+
     api.MapGroup("/health")
        .WithTags("Health")
        .MapHealthEndpoints()
@@ -189,6 +212,7 @@ try
     auth.MapRegister();
     auth.MapLogin();
     auth.MapRefresh();
+    auth.MapUpdateProfile();
 
     api.MapGet("/me", (HttpContext http) =>
     {
@@ -224,6 +248,12 @@ try
     insights.MapClassifyIncident();
     insights.MapGenerateReport();
     insights.MapDetectPatterns();
+
+    var fireStations = api.MapGroup("/fire-stations")
+        .WithTags("FireStations");
+    fireStations.MapFireStations();
+
+    api.MapSettings();
 
     if (app.Environment.IsDevelopment())
     {

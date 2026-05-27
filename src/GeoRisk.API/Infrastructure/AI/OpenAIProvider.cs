@@ -18,8 +18,13 @@ public class OpenAIProvider : ILlmProvider
     public OpenAIProvider(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _apiKey = configuration.GetSection("OpenAI")["ApiKey"]
-            ?? throw new InvalidOperationException("OpenAI:ApiKey is not configured");
+        _apiKey = configuration.GetSection("OpenAI")["ApiKey"] ?? "";
+    }
+
+    private void EnsureApiKey()
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+            throw new InvalidOperationException("OpenAI:ApiKey is not configured");
     }
 
     public async Task<string> CompleteAsync(string system, string user, CancellationToken ct = default)
@@ -34,6 +39,7 @@ public class OpenAIProvider : ILlmProvider
             }
         };
 
+        EnsureApiKey();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         req.Content = JsonContent.Create(request);
@@ -57,6 +63,7 @@ public class OpenAIProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
+        EnsureApiKey();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         req.Content = JsonContent.Create(request);

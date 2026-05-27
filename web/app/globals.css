@@ -24,3 +24,38 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Animated dash for route lines */
+.animated-dash {
+  animation: dash-animation 30s linear infinite;
+}
+
+@keyframes dash-animation {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+/* Pulse ring animation for selected incident marker */
+.selected-marker {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 100, 50, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(255, 100, 50, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 100, 50, 0);
+  }
+}
+
+/* Ensure Leaflet map fills its container */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #0f172a; /* dark slate background */
+}

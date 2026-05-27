@@ -1,10 +1,11 @@
 using GeoRisk.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GeoRisk.API.BackgroundJobs;
 
 public sealed class ReportGenerationJob(
-    GeoRiskDbContext db, ILogger<ReportGenerationJob> logger) : BackgroundService
+    IServiceScopeFactory scopeFactory, ILogger<ReportGenerationJob> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -34,6 +35,9 @@ public sealed class ReportGenerationJob(
 
         try
         {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
             var weekStart = DateTime.UtcNow.AddDays(-7);
 
             var eventsThisWeek = await db.GeoEvents

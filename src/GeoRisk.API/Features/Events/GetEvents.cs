@@ -30,8 +30,16 @@ public sealed class GetEventsHandler(
 
         if (query.Type is not null) q = q.Where(e => e.EventType == query.Type);
         if (query.Severity is not null) q = q.Where(e => e.Severity == query.Severity);
-        if (query.From is not null) q = q.Where(e => e.OccurredAt >= query.From);
-        if (query.To is not null) q = q.Where(e => e.OccurredAt <= query.To);
+        if (query.From is not null)
+        {
+            var fromUtc = DateTime.SpecifyKind(query.From.Value.Date, DateTimeKind.Utc);
+            q = q.Where(e => e.OccurredAt >= fromUtc);
+        }
+        if (query.To is not null)
+        {
+            var toUtc = DateTime.SpecifyKind(query.To.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            q = q.Where(e => e.OccurredAt <= toUtc);
+        }
 
         if (query.Bbox is not null)
         {
@@ -54,12 +62,14 @@ public sealed class GetEventsHandler(
         }
 
         var totalCount = await q.CountAsync(ct);
-        var items = await q.OrderByDescending(e => e.OccurredAt)
+        var entities = await q.OrderByDescending(e => e.OccurredAt)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(e => new EventResponse(e.Id, e.EventType, e.Title, e.Description,
-                e.Geometry.Y, e.Geometry.X, e.Severity, e.Source,
-                e.OccurredAt, e.AIClassification, e.AIInsight, e.CreatedAt))
             .ToListAsync(ct);
+
+        var items = entities.Select(e => new EventResponse(e.Id, Enum.GetName(e.EventType)!, e.Title, e.Description,
+            e.Geometry.Y, e.Geometry.X, Enum.GetName(e.Severity)!, Enum.GetName(e.Source)!,
+            e.OccurredAt, e.AIClassification, e.AIInsight, e.CreatedAt))
+            .ToList();
 
         var result = new EventListResponse(items, totalCount, page, pageSize);
         if (query.CacheKey is not null)

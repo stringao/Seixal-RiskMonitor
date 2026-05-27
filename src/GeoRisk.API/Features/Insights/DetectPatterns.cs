@@ -22,6 +22,12 @@ public sealed class DetectPatternsHandler(
 {
     public async Task<DetectPatternsResult> HandleAsync(DetectPatternsCommand cmd, CancellationToken ct)
     {
+        var settings = await db.AppSettings.FirstOrDefaultAsync(ct);
+        if (settings == null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            return new DetectPatternsResult(new List<DetectedPattern>());
+        }
+
         var from = DateTime.UtcNow.AddDays(-7);
         var events = await db.GeoEvents
             .Where(e => e.OccurredAt >= from)

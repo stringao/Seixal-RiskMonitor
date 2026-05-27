@@ -40,24 +40,22 @@ export function useGenerateReport() {
   const [error, setError] = useState<string | null>(null);
 
   const generate = (from: string, to: string) => {
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
 
     generateReport(from, to)
       .then((res) => {
-        if (!cancelled) setData(res);
+        if (!controller.signal.aborted) setData(res);
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Report generation failed");
+        if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Report generation failed");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   };
 
   return { data, loading, error, generate };

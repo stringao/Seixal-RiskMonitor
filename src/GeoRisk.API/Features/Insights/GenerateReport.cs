@@ -12,6 +12,12 @@ public sealed class GenerateReportHandler(
 {
     public async Task<string> HandleAsync(GenerateReportCommand query, CancellationToken ct)
     {
+        var settings = await db.AppSettings.FirstOrDefaultAsync(ct);
+        if (settings == null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            return "# AI Not Configured\n\nPlease configure an API key in Settings to enable AI-powered report generation.";
+        }
+
         var events = await db.GeoEvents
             .Where(e => e.OccurredAt >= query.From && e.OccurredAt <= query.To)
             .AsNoTracking()

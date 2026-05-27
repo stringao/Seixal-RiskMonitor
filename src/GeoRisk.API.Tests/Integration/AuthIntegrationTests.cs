@@ -246,7 +246,7 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
         var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
         body.Should().NotBeNull();
         body!.Status.Should().Be("Healthy");
-        body.Db.Should().Be("Connected");
+        body.Database.Should().Be("Connected");
     }
 
     [Fact]
@@ -288,5 +288,5 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
     }
 
     // Helper record to deserialize health responses
-    private sealed record HealthResponse(string Status, string Db);
+    private sealed record HealthResponse(string Status, string? Database, string? Redis, string? Timestamp);
 }

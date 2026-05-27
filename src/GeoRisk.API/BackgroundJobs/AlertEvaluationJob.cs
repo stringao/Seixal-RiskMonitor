@@ -1,10 +1,12 @@
 using GeoRisk.API.Domain.Entities;
 using GeoRisk.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GeoRisk.API.BackgroundJobs;
 
-public sealed class AlertEvaluationJob(GeoRiskDbContext db, ILogger<AlertEvaluationJob> logger) : BackgroundService
+public sealed class AlertEvaluationJob(
+    IServiceScopeFactory scopeFactory, ILogger<AlertEvaluationJob> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -21,6 +23,9 @@ public sealed class AlertEvaluationJob(GeoRiskDbContext db, ILogger<AlertEvaluat
 
         try
         {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
             var activeRules = await db.AlertRules
                 .Where(r => r.IsActive)
                 .AsNoTracking()

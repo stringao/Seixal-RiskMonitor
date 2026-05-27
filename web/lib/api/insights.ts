@@ -21,8 +21,8 @@ export interface GenerateReportResult {
 }
 
 export async function generateReport(from: string, to: string): Promise<string> {
-  const { data } = await apiClient.get<string>(`/insights/report?from=${from}&to=${to}`);
-  return data;
+  const { data } = await apiClient.get<GenerateReportResult>(`/insights/report?from=${from}&to=${to}`);
+  return data.report;
 }
 
 export interface DetectedPattern {

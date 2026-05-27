@@ -32,6 +32,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 export default function AlertRulesPage() {
   const [rules, setRules] = useState<AlertRule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -54,34 +55,42 @@ export default function AlertRulesPage() {
   }, []);
 
   const handleCreate = async (data: CreateAlertRuleRequest) => {
+    setActionLoading("create");
     await createAlertRule(data);
     setShowCreateForm(false);
+    setActionLoading(null);
     await loadRules();
   };
 
   const handleUpdate = async (data: UpdateAlertRuleRequest) => {
     if (!editingRule) return;
+    setActionLoading("update");
     await updateAlertRule(editingRule.id, data);
     setEditingRule(null);
+    setActionLoading(null);
     await loadRules();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Eliminar esta regra?")) return;
+    setActionLoading(id);
     await deleteAlertRule(id);
+    setActionLoading(null);
     await loadRules();
   };
 
   const handleToggle = async (id: string) => {
+    setActionLoading(id);
     await toggleAlertRule(id);
+    setActionLoading(null);
     await loadRules();
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Link
-          href="/dashboard/alerts"
+          href="/alerts"
           className="p-2 text-slate-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -176,21 +185,24 @@ export default function AlertRulesPage() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => handleToggle(rule.id)}
-                  className="p-2 text-slate-400 hover:text-white transition-colors"
+                  disabled={actionLoading !== null}
+                  className="p-2 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
                   title={rule.isActive ? "Desativar" : "Ativar"}
                 >
                   <Power className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setEditingRule(rule)}
-                  className="p-2 text-slate-400 hover:text-white transition-colors"
+                  disabled={actionLoading !== null}
+                  className="p-2 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
                   title="Editar"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(rule.id)}
-                  className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                  disabled={actionLoading !== null}
+                  className="p-2 text-slate-400 hover:text-red-400 transition-colors disabled:opacity-50"
                   title="Eliminar"
                 >
                   <Trash2 className="w-4 h-4" />

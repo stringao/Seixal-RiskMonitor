@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Risk.Dto;
 
@@ -41,9 +42,19 @@ public static class CalculateRiskEndpoint
     public static RouteGroupBuilder MapCalculateRisk(this RouteGroupBuilder group)
     {
         group.MapPost("/calculate", async (
-            CalculateRiskCommand cmd,
+            HttpContext http,
             ICommandHandler<CalculateRiskCommand, CalculateRiskResponse> h) =>
-            Results.Ok(await h.HandleAsync(cmd, default)))
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var cmd = await JsonSerializer.DeserializeAsync<CalculateRiskCommand>(http.Request.Body, jsonOptions);
+            if (cmd is null) return Results.BadRequest(new { error = "Request body is required" });
+            return Results.Ok(await h.HandleAsync(cmd, default));
+        })
             .RequireAuthorization("AdminOnly");
         return group;
     }

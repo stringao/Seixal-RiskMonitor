@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Alerts.Dto;
 using GeoRisk.API.Infrastructure.Services;
@@ -49,8 +50,8 @@ public sealed class ConfigureAlertRulesHandler(
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
-            EventType = request.EventType,
-            SeverityThreshold = request.SeverityThreshold,
+            EventType = TryParseEventType(request.EventType),
+            SeverityThreshold = TryParseRiskLevel(request.SeverityThreshold),
             Area = area,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
@@ -69,8 +70,8 @@ public sealed class ConfigureAlertRulesHandler(
             ?? throw new InvalidOperationException($"Rule {ruleId} not found");
 
         if (request.Name is not null) rule.Name = request.Name;
-        if (request.EventType is not null) rule.EventType = request.EventType;
-        if (request.SeverityThreshold is not null) rule.SeverityThreshold = request.SeverityThreshold;
+        if (request.EventType is not null) rule.EventType = TryParseEventType(request.EventType);
+        if (request.SeverityThreshold is not null) rule.SeverityThreshold = TryParseRiskLevel(request.SeverityThreshold);
         if (request.AreaWkt is not null)
         {
             rule.Area = string.IsNullOrWhiteSpace(request.AreaWkt)
@@ -106,7 +107,13 @@ public sealed class ConfigureAlertRulesHandler(
     }
 
     private static AlertRuleResponse ToResponse(AlertRule r) =>
-        new(r.Id, r.Name, r.EventType, r.SeverityThreshold, r.Area?.AsText(), r.IsActive, r.CreatedAt);
+        new(r.Id, r.Name, r.EventType?.ToString(), r.SeverityThreshold?.ToString(), r.Area?.AsText(), r.IsActive, r.CreatedAt);
+
+    private static EventType? TryParseEventType(string? value) =>
+        Enum.TryParse<EventType>(value, ignoreCase: true, out var result) ? result : null;
+
+    private static RiskLevel? TryParseRiskLevel(string? value) =>
+        Enum.TryParse<RiskLevel>(value, ignoreCase: true, out var result) ? result : null;
 
     private static Polygon TryParseWkt(string wkt)
     {
@@ -126,9 +133,27 @@ public static class ConfigureAlertRulesEndpoint
     public static RouteGroupBuilder MapConfigureAlertRules(this RouteGroupBuilder group)
     {
         group.MapPost("/", async (
-            ConfigureAlertRulesRequest request,
+            HttpContext http,
             ICommandHandler<ConfigureAlertRulesCommand, AlertRuleResponse> handler) =>
         {
+            ConfigureAlertRulesRequest? request;
+            try
+            {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                };
+                request = await JsonSerializer.DeserializeAsync<ConfigureAlertRulesRequest>(http.Request.Body, jsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                return Results.Text($"{{\"error\":\"Deserialization failed: {ex.Message}\"}}", contentType: "application/json", statusCode: 400);
+            }
+            if (request is null)
+                return Results.Text("{\"error\":\"Request body is required\"}", contentType: "application/json", statusCode: 400);
+
             var result = await handler.HandleAsync(request.ToCommand(), default);
             return Results.Ok(result);
         }).RequireAuthorization("AnalystOrAdmin");

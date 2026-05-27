@@ -13,6 +13,22 @@ const typeColors: Record<string, string> = {
   severity: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
+function ConfidenceBadge({ confidence }: { confidence: number }) {
+  const pct = Math.round(confidence * 100);
+  const colorClass =
+    pct >= 80
+      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+      : pct >= 50
+      ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+      : "bg-red-500/20 text-red-400 border-red-500/30";
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}>
+      {pct}% confiança
+    </span>
+  );
+}
+
 export function PatternCard({ pattern }: Readonly<PatternCardProps>) {
   const colorClass = typeColors[pattern.patternType] ?? "bg-slate-500/20 text-slate-400 border-slate-500/30";
 
@@ -25,14 +41,12 @@ export function PatternCard({ pattern }: Readonly<PatternCardProps>) {
           </span>
           <span className="text-sm font-semibold text-white">{pattern.title}</span>
         </div>
-        <span className="text-xs text-slate-500">
-          {Math.round(pattern.confidence * 100)}% confidence
-        </span>
+        <ConfidenceBadge confidence={pattern.confidence} />
       </div>
       <p className="text-sm text-slate-400 leading-relaxed">{pattern.description}</p>
       {pattern.recommendation && (
         <div className="pt-2 border-t border-slate-700">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Recommendation</span>
+          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Recomendação</span>
           <p className="text-sm text-emerald-400 mt-1">{pattern.recommendation}</p>
         </div>
       )}

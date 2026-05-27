@@ -1,10 +1,11 @@
 using GeoRisk.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GeoRisk.API.BackgroundJobs;
 
 public sealed class PatternDetectionJob(
-    GeoRiskDbContext db, ILogger<PatternDetectionJob> logger) : BackgroundService
+    IServiceScopeFactory scopeFactory, ILogger<PatternDetectionJob> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -21,6 +22,9 @@ public sealed class PatternDetectionJob(
 
         try
         {
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
             await DetectClusterPatternsAsync(ct);
             await DetectTemporalPatternsAsync(ct);
             await DetectEscalationPatternsAsync(ct);
@@ -35,6 +39,9 @@ public sealed class PatternDetectionJob(
 
     private async Task DetectClusterPatternsAsync(CancellationToken ct)
     {
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
         var recentEvents = await db.GeoEvents
             .Where(e => e.OccurredAt >= DateTime.UtcNow.AddDays(-7))
             .AsNoTracking()
@@ -49,6 +56,9 @@ public sealed class PatternDetectionJob(
 
     private async Task DetectTemporalPatternsAsync(CancellationToken ct)
     {
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
         var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
         var dailyCounts = await db.GeoEvents
             .Where(e => e.OccurredAt >= thirtyDaysAgo)
@@ -68,6 +78,9 @@ public sealed class PatternDetectionJob(
 
     private async Task DetectEscalationPatternsAsync(CancellationToken ct)
     {
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GeoRiskDbContext>();
+
         var recentHighSeverity = await db.GeoEvents
             .Where(e => e.Severity >= RiskLevel.High && e.OccurredAt >= DateTime.UtcNow.AddHours(-24))
             .AsNoTracking()

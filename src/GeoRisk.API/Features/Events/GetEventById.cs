@@ -11,8 +11,8 @@ public sealed class GetEventByIdHandler(GeoRiskDbContext db) : IQueryHandler<Get
     {
         var e = await db.GeoEvents.AsNoTracking().FirstOrDefaultAsync(ev => ev.Id == query.Id, ct);
         if (e is null) return null;
-        return new EventResponse(e.Id, e.EventType, e.Title, e.Description,
-            e.Geometry.Y, e.Geometry.X, e.Severity, e.Source,
+        return new EventResponse(e.Id, Enum.GetName(e.EventType)!, e.Title, e.Description,
+            e.Geometry.Y, e.Geometry.X, Enum.GetName(e.Severity)!, Enum.GetName(e.Source)!,
             e.OccurredAt, e.AIClassification, e.AIInsight, e.CreatedAt);
     }
 }
