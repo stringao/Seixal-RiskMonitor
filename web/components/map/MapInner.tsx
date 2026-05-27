@@ -7,6 +7,7 @@ import { EventMarker } from "./EventMarker";
 import { FireStationMarker } from "./FireStationMarker";
 import type { GeoEvent } from "@/lib/types/event";
 import type { FireStation } from "@/lib/types/fireStation";
+import type { RouteInfo } from "./MapContainer";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -26,11 +27,6 @@ const SETUBAL_BBOX = "-9.5,38.2,-8.2,39.0";
 // Route line colors by index
 const ROUTE_COLORS = ["#3b82f6", "#22c55e", "#f97316"]; // blue, green, orange
 
-interface NearestStation {
-  station: FireStation;
-  distance: number;
-}
-
 interface MapContentsProps {
   events: GeoEvent[];
   fireStations: FireStation[];
@@ -40,7 +36,8 @@ interface MapContentsProps {
   selectedIncidentId: string | null;
   onIncidentClick?: (eventId: string) => void;
   clearSelection?: () => void;
-  nearestStations: NearestStation[];
+  routes: RouteInfo[];
+  loadingRoutes?: boolean;
 }
 
 // ─── Child components that live INSIDE MapContainer context ───
@@ -130,15 +127,11 @@ function BoundaryLayer({ visibility, level }: { visibility: boolean; level: "mun
   return null;
 }
 
-function formatDistance(distance: number): string {
-  return `${(distance * 111).toFixed(1)} km`;
-}
-
 // ─── MapContents: the component that uses useMap and lives INSIDE MapContainer ───
 function MapContents({
   events, fireStations, showBoundaries, boundaryLevel,
   onFireStationClick, selectedIncidentId, onIncidentClick,
-  clearSelection, nearestStations,
+  clearSelection, routes, loadingRoutes,
 }: MapContentsProps) {
   const selectedEvent = events.find(e => e.id === selectedIncidentId);
 
@@ -149,21 +142,27 @@ function MapContents({
       <MapClickHandler clearSelection={clearSelection} />
       <BoundaryLayer visibility={showBoundaries} level={boundaryLevel} />
 
-      {selectedEvent && nearestStations.map((item, index) => (
+      {loadingRoutes && selectedEvent && (
         <Polyline
-          key={`route-${item.station.id}`}
           positions={[
             [selectedEvent.latitude, selectedEvent.longitude],
-            [item.station.latitude, item.station.longitude],
           ]}
-          pathOptions={{ color: ROUTE_COLORS[index], weight: 2, dashArray: "8, 12", className: "animated-dash" }}
+          pathOptions={{ color: "#94a3b8", weight: 2, dashArray: "4, 8" }}
+        />
+      )}
+
+      {routes.map((route, index) => (
+        <Polyline
+          key={`route-${route.station.id}`}
+          positions={route.geometry}
+          pathOptions={{ color: ROUTE_COLORS[index], weight: 3, dashArray: undefined }}
         >
           <Tooltip permanent direction="center" offset={[0, -10]}>
             <span style={{
               backgroundColor: ROUTE_COLORS[index], color: "white",
               padding: "2px 6px", borderRadius: "4px", fontSize: "11px", fontWeight: "bold",
             }}>
-              {formatDistance(item.distance)}
+              {(route.distance / 1000).toFixed(1)} km
             </span>
           </Tooltip>
         </Polyline>
@@ -200,14 +199,15 @@ interface MapInnerProps {
   selectedIncidentId?: string | null;
   onIncidentClick?: (eventId: string) => void;
   clearSelection?: () => void;
-  nearestStations?: NearestStation[];
+  routes?: RouteInfo[];
+  loadingRoutes?: boolean;
 }
 
 export function MapInner({
   events, fireStations = [], showBoundaries = false,
   boundaryLevel = "municipios", onFireStationClick,
   selectedIncidentId, onIncidentClick, clearSelection,
-  nearestStations = [],
+  routes = [], loadingRoutes = false,
 }: MapInnerProps) {
   return (
     <LeafletMap
@@ -226,7 +226,8 @@ export function MapInner({
         selectedIncidentId={selectedIncidentId ?? null}
         onIncidentClick={onIncidentClick}
         clearSelection={clearSelection}
-        nearestStations={nearestStations}
+        routes={routes}
+        loadingRoutes={loadingRoutes}
       />
     </LeafletMap>
   );

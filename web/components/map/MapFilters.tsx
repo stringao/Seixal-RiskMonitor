@@ -12,8 +12,6 @@ interface MapFiltersProps {
   onBoundaryToggle?: (show: boolean) => void;
   boundaryLevel?: "municipios" | "distritos" | "both";
   onBoundaryLevelChange?: (level: "municipios" | "distritos" | "both") => void;
-  showFireStations?: boolean;
-  onFireStationsToggle?: (show: boolean) => void;
 }
 
 const EVENT_TYPES: EventType[] = ["Fire", "Flood", "Storm", "Landslide", "Industrial", "Heatwave", "Other"];
@@ -51,8 +49,6 @@ export function MapFilters({
   onBoundaryToggle,
   boundaryLevel,
   onBoundaryLevelChange,
-  showFireStations,
-  onFireStationsToggle,
 }: MapFiltersProps) {
   const update = useCallback(
     (patch: Partial<EventFilters>) => onChange({ ...filters, ...patch }),
@@ -159,15 +155,6 @@ export function MapFilters({
           Camadas do Mapa
         </label>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showFireStations ?? false}
-              onChange={(e) => onFireStationsToggle?.(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
-            />
-            <span className="text-sm text-slate-300">Postos de Bombeiros</span>
-          </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"

@@ -87,6 +87,22 @@ services:
       interval: 5s
       retries: 5
 
+  # OSRM - Open Source Routing Machine (self-hosted)
+  # Uses OpenStreetMap data for real road routing
+  # IMPORTANT: Run scripts/setup-osrm-data.sh first to download and process Portugal OSM data
+  osrm:
+    image: osrm/osrm-backend
+    ports:
+      - "5001:5000"
+    command: osrm-routed --algorithm mld --max-table-size 10000 /data/portugal-latest.osrm
+    volumes:
+      - ./docker/osrm-data:/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5000/routes?coordinates=-9.1,38.7;-9.0,38.6 || exit 1"]
+      interval: 30s
+      retries: 3
+      start_period: 2m
+
 volumes:
   pgdata:
   sonarqube_data:

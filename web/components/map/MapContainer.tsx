@@ -8,6 +8,7 @@ import { useFireStations } from "@/lib/hooks/useFireStations";
 import { EventFilters } from "@/lib/types/event";
 import { MapFilters } from "./MapFilters";
 import { Legend } from "./Legend";
+import { getRoutesToStations } from "@/lib/routing/osrm";
 import type { GeoEvent } from "@/lib/types/event";
 import type { FireStation } from "@/lib/types/fireStation";
 
@@ -21,18 +22,26 @@ const MapInner = dynamic(() => import("./MapInner").then((m) => m.MapInner), {
   ),
 });
 
+export interface RouteInfo {
+  station: FireStation;
+  geometry: [number, number][];
+  distance: number; // meters
+  duration: number; // seconds
+}
+
 export default function MapContainer() {
   const [filters, setFilters] = useState<EventFilters>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [showBoundaries, setShowBoundaries] = useState(false);
-  const [showFireStations, setShowFireStations] = useState(false);
   const [boundaryLevel, setBoundaryLevel] = useState<"municipios" | "distritos" | "both">("municipios");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [routes, setRoutes] = useState<RouteInfo[]>([]);
+  const [loadingRoutes, setLoadingRoutes] = useState(false);
   const { data, error } = useEvents(filters);
   const { data: fireStationsData } = useFireStations({});
 
-  // Calculate nearest 3 fire stations to selected incident
+  // Calculate nearest 3 fire stations to selected incident (Euclidean for initial selection)
   const nearestStations = useMemo(() => {
     if (!selectedIncidentId) return [];
     
@@ -56,6 +65,59 @@ export default function MapContainer() {
       .slice(0, 3);
   }, [selectedIncidentId, data?.items, fireStationsData?.items]);
 
+  // Fetch real routes when incident is selected
+  const selectedEvent = useMemo(() => {
+    if (!selectedIncidentId) return null;
+    return data?.items.find(e => e.id === selectedIncidentId) ?? null;
+  }, [selectedIncidentId, data?.items]);
+
+  // Update routes when nearest stations change
+  useMemo(() => {
+    if (!selectedEvent || nearestStations.length === 0) {
+      setRoutes([]);
+      return;
+    }
+
+    const fetchRoutes = async () => {
+      setLoadingRoutes(true);
+      try {
+        const stationCoords = nearestStations.map(item => ({
+          id: item.station.id,
+          longitude: item.station.longitude,
+          latitude: item.station.latitude,
+        }));
+
+        const routeResults = await getRoutesToStations(
+          selectedEvent.longitude,
+          selectedEvent.latitude,
+          stationCoords
+        );
+
+        const routeInfos: RouteInfo[] = nearestStations
+          .map(item => {
+            const route = routeResults.get(item.station.id);
+            if (!route) return null;
+            return {
+              station: item.station,
+              geometry: route.geometry,
+              distance: route.distance,
+              duration: route.duration,
+            };
+          })
+          .filter((r): r is RouteInfo => r !== null);
+
+        setRoutes(routeInfos);
+      } catch (error) {
+        console.error("Failed to fetch routes:", error);
+        setRoutes([]);
+      } finally {
+        setLoadingRoutes(false);
+      }
+    };
+
+    fetchRoutes();
+  }, [selectedEvent, nearestStations]);
+
   const handleFilterChange = useCallback((newFilters: EventFilters) => {
     setFilters(newFilters);
   }, []);
@@ -68,29 +130,28 @@ export default function MapContainer() {
     setBoundaryLevel(level);
   }, []);
 
-  const handleFireStationsToggle = useCallback((show: boolean) => {
-    setShowFireStations(show);
-  }, []);
-
   const handleIncidentClick = useCallback((eventId: string) => {
     setSelectedIncidentId(eventId);
+    setRoutes([]); // Clear routes when selecting new incident
   }, []);
 
   const clearSelection = useCallback(() => {
     setSelectedIncidentId(null);
+    setRoutes([]);
   }, []);
 
   return (
     <div className="flex w-full h-full relative">
       <MapInner
         events={data?.items ?? []}
-        fireStations={showFireStations ? (fireStationsData?.items ?? []) : []}
+        fireStations={fireStationsData?.items ?? []}
         showBoundaries={showBoundaries}
         boundaryLevel={boundaryLevel}
         selectedIncidentId={selectedIncidentId}
         onIncidentClick={handleIncidentClick}
         clearSelection={clearSelection}
-        nearestStations={nearestStations}
+        routes={routes}
+        loadingRoutes={loadingRoutes}
       />
       <button
         onClick={() => setFiltersOpen(!filtersOpen)}
@@ -111,8 +172,6 @@ export default function MapContainer() {
             onBoundaryToggle={handleBoundaryToggle}
             boundaryLevel={boundaryLevel}
             onBoundaryLevelChange={handleBoundaryLevelChange}
-            showFireStations={showFireStations}
-            onFireStationsToggle={handleFireStationsToggle}
           />
         </div>
       </div>
