@@ -14,8 +14,12 @@ Plataforma full-stack de monitorização de riscos geográficos para o Concelho 
                                ├──────────▶│   Redis 7        │
                                │           └─────────────────┘
                                │           ┌─────────────────┐
-                               └──────────▶│  LLM Providers  │
-                                           │ Claude / OpenAI  │
+                               ├──────────▶│  LLM Providers   │
+                               │           │ Claude / OpenAI  │
+                               │           └─────────────────┘
+                               │           ┌─────────────────┐
+                               └──────────▶│  OSRM Routing    │
+                                           │ Self-hosted     │
                                            └─────────────────┘
 ```
 
@@ -28,7 +32,8 @@ Plataforma full-stack de monitorização de riscos geográficos para o Concelho 
 | Base de dados | PostgreSQL 17 + PostGIS 3.5 |
 | Cache | Redis 7 |
 | Frontend | Next.js 15 + TypeScript + Tailwind CSS |
-| Mapa | Leaflet + react-leaflet |
+| Mapa | Leaflet + react-leaflet (OpenStreetMap) |
+| Routing | OSRM self-hosted (OpenStreetMap data) |
 | IA | Multi-provider (Claude API + OpenAI) |
 | Auth | JWT com refresh tokens |
 | Infra | Docker Compose |
@@ -41,6 +46,7 @@ Plataforma full-stack de monitorização de riscos geográficos para o Concelho 
 - Filtros por tipo, severidade e data
 - Buffer zones à volta de eventos críticos
 - Boundary do Concelho do Seixal (GeoJSON)
+- **Routing automático** de ocorrências para bombeiros via OSRM (estradas reais)
 
 ### Análise Espacial (PostGIS)
 - Interseção entre eventos e zonas de risco
@@ -64,18 +70,22 @@ Plataforma full-stack de monitorização de riscos geográficos para o Concelho 
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/ricardo-oliveira/SeixalRiscalMonitor.git
-cd SeixalRiscalMonitor
+git clone https://github.com/stringao/Seixal-RiskMonitor.git
+cd Seixal-RiskMonitor
 
 # Configurar environment variables
 cp .env.example .env
 
-# Iniciar todos os serviços
+# Preparar dados OSM para routing (apenas na primeira vez - demora ~15min)
+bash scripts/setup-osrm-data.sh
+
+# Iniciar todos os serviços (inclui OSRM para routing)
 docker compose up -d
 
 # Aceder à aplicação
 # Frontend: http://localhost:3000
 # API:      http://localhost:5000/swagger
+# OSRM:     http://localhost:5001 (para debugging)
 ```
 
 ## Estrutura do Projeto
@@ -92,7 +102,15 @@ SeixalRiscalMonitor/
 ├── web/                         # Frontend Next.js
 │   ├── app/
 │   ├── components/
+│   │   └── map/                 # Componentes do mapa
+│   ├── lib/
+│   │   ├── routing/             # OSRM routing service
+│   │   └── types/               # TypeScript types
 │   └── lib/
+├── scripts/
+│   └── setup-osrm-data.sh       # Script para preparar dados OSM
+├── docker/
+│   └── osrm-data/               # Dados OSM processados (git ignored)
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -113,7 +131,17 @@ SeixalRiscalMonitor/
 - Docker & Docker Compose
 - .NET 10 SDK (para desenvolvimento local)
 - Node.js 20+ (para desenvolvimento local)
+- Espaço em disco: ~500MB para dados OSM de Portugal
 - Chaves de API: Anthropic e/ou OpenAI (para features de IA)
+
+## Environment Variables
+
+| Variável | Descrição |
+|----------|-----------|
+| `NEXT_PUBLIC_OSRM_URL` | URL do serviço OSRM (default: http://localhost:5001) |
+| `OPENROUTESERVICE_API_KEY` | Chave API OpenRouteService (opcional, para fallback) |
+| `ANTHROPIC_API_KEY` | Chave API Anthropic Claude |
+| `OPENAI_API_KEY` | Chave API OpenAI |
 
 ## Licença
 
