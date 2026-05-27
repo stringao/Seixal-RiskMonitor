@@ -117,7 +117,7 @@ test.describe("Alerts page", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.locator("h2")).toContainText("Alertas", { ignoreCase: true });
   });
@@ -131,7 +131,7 @@ test.describe("Alerts page", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.locator("select")).toBeVisible();
   });
@@ -160,7 +160,7 @@ test.describe("Alerts page", () => {
         }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await page.waitForTimeout(2000);
     await expect(page.getByText("Fire alert")).toBeVisible();
@@ -168,7 +168,7 @@ test.describe("Alerts page", () => {
 
   test("navigates to rules from alerts", async ({ page }) => {
     await setupAuth(page);
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     const rulesLink = page.getByRole("link", { name: /regras|rules/i });
     if (await rulesLink.isVisible()) {
@@ -190,7 +190,7 @@ test.describe("Alert Rules page", () => {
         body: JSON.stringify({ items: [] }),
       })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.locator("h2")).toContainText("Regras", { ignoreCase: true });
   });
@@ -200,7 +200,7 @@ test.describe("Alert Rules page", () => {
     await page.route("http://localhost:5000/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.getByRole("button", { name: /nova regra|new rule/i })).toBeVisible();
   });
@@ -210,7 +210,7 @@ test.describe("Alert Rules page", () => {
     await page.route("http://localhost:5000/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.locator("text=Nenhuma regra")).toBeVisible();
   });
@@ -236,7 +236,7 @@ test.describe("Alert Rules page", () => {
         }),
       })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.locator("text=Fire Rule")).toBeVisible();
   });
@@ -246,7 +246,7 @@ test.describe("Alert Rules page", () => {
     await page.route("http://localhost:5000/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await page.getByRole("button", { name: /nova regra|new rule/i }).click();
     await expect(page.locator("text=Criar nova regra")).toBeVisible();
@@ -254,7 +254,7 @@ test.describe("Alert Rules page", () => {
 
   test("navigates back to alerts", async ({ page }) => {
     await setupAuth(page);
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     const backLink = page.getByRole("main").getByRole("link", { name: /alertas/i });
     if (await backLink.isVisible()) {
@@ -324,6 +324,34 @@ test.describe("Event detail page", () => {
       await backLink.click();
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 5000 });
     }
+  });
+
+  test("renders map with coordinates", async ({ page }) => {
+    const mockEvent = {
+      id: "evt-1",
+      title: "Test Event",
+      eventType: "Fire",
+      severity: "Critical",
+      source: "ICNF",
+      latitude: 38.6267,
+      longitude: -9.1048,
+      occurredAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    await setupAuth(page);
+    await page.route("http://localhost:5000/api/events/evt-1", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockEvent) })
+    );
+    // Mock tile requests
+    await page.route("https://tile.openstreetmap.org/**", (route) =>
+      route.fulfill({ status: 200, contentType: "image/png", body: Buffer.from([]) })
+    );
+    await page.goto("/dashboard/events/evt-1");
+    await page.waitForLoadState("load");
+    // Check that coordinates are displayed
+    await expect(page.locator("text=38.6267, -9.1048")).toBeVisible();
+    // Check that the map container exists
+    await expect(page.locator("img[alt*='Mapa']")).toBeVisible();
   });
 });
 

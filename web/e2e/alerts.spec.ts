@@ -81,7 +81,7 @@ test.describe("Alerts Page - Rendering", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.locator("h2")).toContainText("Alertas");
   });
@@ -96,7 +96,7 @@ test.describe("Alerts Page - Rendering", () => {
         body: JSON.stringify({ items: [alert], totalCount: 1, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText(/Atualizado/)).toBeVisible();
   });
@@ -117,7 +117,7 @@ test.describe("Alerts Page - Rendering", () => {
         body: JSON.stringify({ items: [] }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     const rulesLink = page.getByRole("link", { name: /regras/i });
     await expect(rulesLink).toBeVisible();
@@ -132,7 +132,7 @@ test.describe("Alerts Page - Rendering", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     const selects = page.locator("select");
     await expect(selects.first()).toBeVisible();
@@ -147,7 +147,7 @@ test.describe("Alerts Page - Rendering", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     const checkbox = page.locator('input[type="checkbox"]');
     await expect(checkbox).toBeVisible();
@@ -164,7 +164,7 @@ test.describe("Alerts Page - Empty State", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Nenhum alerta encontrado")).toBeVisible();
   });
@@ -181,7 +181,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: [alert], totalCount: 1, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Fire detected")).toBeVisible();
     await expect(page.getByText("Forest fire in sector 7")).toBeVisible();
@@ -197,7 +197,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: [unread], totalCount: 1, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.locator(".opacity-60").first()).not.toBeVisible();
   });
@@ -212,7 +212,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: [read], totalCount: 1, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.locator(".opacity-60").first()).toBeVisible();
   });
@@ -227,7 +227,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: [alert], totalCount: 1, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Marcar lida")).toBeVisible();
   });
@@ -242,7 +242,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: [alert], totalCount: 1, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Marcar lida")).not.toBeVisible();
   });
@@ -261,7 +261,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: alerts, totalCount: 3, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("2 não lidas")).toBeVisible();
   });
@@ -276,7 +276,7 @@ test.describe("Alerts Page - Alerts List", () => {
         body: JSON.stringify({ items: alerts, totalCount: 2, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Todas lidas")).toBeVisible();
   });
@@ -292,7 +292,7 @@ test.describe("Alerts Page - Filters", () => {
         body: JSON.stringify({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     const select = page.locator("select").first();
     await select.click();
@@ -320,7 +320,7 @@ test.describe("Alerts Page - Filters", () => {
         body: JSON.stringify({ items: filtered, totalCount: filtered.length, page: 1, pageSize: 20 }),
       });
     });
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Critical Alert")).toBeVisible();
     await expect(page.getByText("Info Alert")).toBeVisible();
@@ -346,7 +346,7 @@ test.describe("Alerts Page - Filters", () => {
         body: JSON.stringify({ items: filtered, totalCount: filtered.length, page: 1, pageSize: 20 }),
       });
     });
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Unread Alert")).toBeVisible();
     await expect(page.getByText("Read Alert")).toBeVisible();
@@ -370,7 +370,7 @@ test.describe("Alerts Page - Mark Read Actions", () => {
     await page.route("POST", "**/api/alerts/read", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     const markBtn = page.getByText("Marcar lida");
     await expect(markBtn).toBeVisible();
@@ -389,7 +389,7 @@ test.describe("Alerts Page - Mark Read Actions", () => {
         body: JSON.stringify({ items: alerts, totalCount: 2, page: 1, pageSize: 20 }),
       })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await expect(page.getByText("Marcar todas lidas")).toBeVisible();
   });
@@ -408,10 +408,10 @@ test.describe("Alerts Page - Navigation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts");
+    await page.goto("/alerts");
     await page.waitForLoadState("load");
     await page.getByRole("link", { name: /regras/i }).click();
-    await expect(page).toHaveURL(/\/dashboard\/alerts\/rules/, { timeout: 5000 });
+    await expect(page).toHaveURL(/\/alerts\/rules/, { timeout: 5000 });
   });
 });
 
@@ -423,7 +423,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("http://localhost:5000/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await page.getByRole("button", { name: /nova regra/i }).click();
     // Submit button should be disabled when name is empty
@@ -453,7 +453,7 @@ test.describe("Alert Rules - Form Validation", () => {
       }
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
     });
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await page.getByRole("button", { name: /nova regra/i }).click();
     await page.locator('input[placeholder*="Alerta"]').fill("Fire Rule");
@@ -468,7 +468,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await page.getByRole("button", { name: /nova regra/i }).click();
     await page.locator('input[placeholder*="Alerta"]').fill("Test Rule");
@@ -487,7 +487,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [rule] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await page.locator('button[title="Editar"]').click();
     await expect(page.getByText("Editar regra")).toBeVisible();
@@ -504,7 +504,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [rule] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await page.locator('button[title="Editar"]').click();
     await page.locator('input[type="text"]').fill("Changed Name");
@@ -523,7 +523,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [rule] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.locator('button[title="Eliminar"]')).toBeVisible();
   });
@@ -538,7 +538,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [rule] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.locator('button[title="Desativar"]')).toBeVisible();
   });
@@ -548,7 +548,7 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     await expect(page.getByText("Nenhuma regra")).toBeVisible();
   });
@@ -558,10 +558,10 @@ test.describe("Alert Rules - Form Validation", () => {
     await page.route("**/api/alerts/rules", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) })
     );
-    await page.goto("/dashboard/alerts/rules");
+    await page.goto("/alerts/rules");
     await page.waitForLoadState("load");
     const backLink = page.locator("a").first();
     await backLink.click();
-    await expect(page).toHaveURL(/\/dashboard\/alerts/, { timeout: 5000 });
+    await expect(page).toHaveURL(/\/alerts/, { timeout: 5000 });
   });
 });

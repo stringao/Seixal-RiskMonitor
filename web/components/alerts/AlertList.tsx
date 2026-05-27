@@ -2,26 +2,33 @@
 
 import { RefreshCw } from "lucide-react";
 import { AlertCard } from "./AlertCard";
+import { Pagination } from "@/components/ui/Pagination";
 import type { Alert } from "@/lib/types/alert";
 
 interface AlertListProps {
   alerts: Alert[];
   loading?: boolean;
+  page: number;
+  pageSize: number;
+  totalCount: number;
   onMarkRead?: (id: string) => void;
   onMarkAllRead?: () => void;
   onRefresh?: () => void;
-  hasMore?: boolean;
-  onLoadMore?: () => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
 export function AlertList({
   alerts,
   loading,
+  page,
+  pageSize,
+  totalCount,
   onMarkRead,
   onMarkAllRead,
   onRefresh,
-  hasMore,
-  onLoadMore,
+  onPageChange,
+  onPageSizeChange,
 }: AlertListProps) {
   if (loading && alerts.length === 0) {
     return (
@@ -74,15 +81,13 @@ export function AlertList({
         ))}
       </div>
 
-      {hasMore && onLoadMore && (
-        <button
-          onClick={onLoadMore}
-          disabled={loading}
-          className="w-full py-2 text-sm text-slate-400 hover:text-white transition-colors disabled:opacity-50"
-        >
-          {loading ? "A carregar..." : "Carregar mais"}
-        </button>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 }

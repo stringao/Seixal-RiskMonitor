@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { StaticMap } from "@/components/map/StaticMap";
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,13 +30,26 @@ export default function EventDetailPage() {
   if (!event) return <div className="text-slate-400">Evento não encontrado</div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+    <div className="max-w-7xl mx-auto space-y-6">
+      <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors z-10 relative">
         <ArrowLeft className="w-4 h-4" />
         Voltar
       </Link>
 
-      <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 space-y-4">
+      {/* Split layout: map + info */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Map */}
+        <div className="rounded-xl overflow-hidden border border-slate-700 h-[400px] lg:h-[500px]">
+          <StaticMap
+            latitude={event.latitude}
+            longitude={event.longitude}
+            markerColor={SEVERITY_COLORS[event.severity] ?? "#ef4444"}
+            className="w-full h-full"
+          />
+        </div>
+
+        {/* Info card */}
+        <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-xl p-6 space-y-4">
         <div className="flex items-center gap-3">
           <span
             className="w-4 h-4 rounded-full"
@@ -63,10 +77,6 @@ export default function EventDetailPage() {
               {format(new Date(event.occurredAt), "d MMMM yyyy HH:mm", { locale: pt })}
             </div>
           </div>
-          <div>
-            <span className="text-slate-500">Localização</span>
-            <div className="text-white">{event.latitude.toFixed(5)}, {event.longitude.toFixed(5)}</div>
-          </div>
         </div>
 
         {event.description && (
@@ -83,6 +93,7 @@ export default function EventDetailPage() {
             {event.aiInsight && <p className="text-xs text-indigo-300 mt-2">{event.aiInsight}</p>}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

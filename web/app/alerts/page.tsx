@@ -12,12 +12,13 @@ import { pt } from "date-fns/locale";
 export default function AlertsPage() {
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | "">("");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
-  const { data, loading, markRead, refresh, loadMore, hasMore } = useAlerts({
+  const { data, loading, markRead, refresh, page, pageSize, setPage, setPageSize } = useAlerts({
     severity: severityFilter || undefined,
     isRead: showUnreadOnly ? false : undefined,
   });
 
   const alerts = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
   const lastUpdate = data ? formatDistanceToNow(new Date(), { addSuffix: true, locale: pt }) : null;
 
   return (
@@ -65,11 +66,14 @@ export default function AlertsPage() {
       <AlertList
         alerts={alerts}
         loading={loading}
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
         onMarkRead={(id) => markRead({ alertIds: [id] })}
         onMarkAllRead={() => markRead({ markAllRead: true })}
         onRefresh={refresh}
-        hasMore={hasMore}
-        onLoadMore={loadMore}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => setPageSize(s)}
       />
     </div>
   );

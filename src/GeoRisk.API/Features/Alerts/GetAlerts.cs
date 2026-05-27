@@ -57,7 +57,7 @@ public static class GetAlertsEndpoint
             IQueryHandler<GetAlertsQuery, AlertListResponse> handler) =>
         {
             var p = page ?? 1;
-            var ps = pageSize ?? 20;
+            var ps = pageSize ?? 5;
             var cacheKey = $"alerts:{severity}:{isRead}:{p}:{ps}";
             var result = await handler.HandleAsync(new GetAlertsQuery(p, ps, severity, isRead, cacheKey), default);
             return Results.Ok(result);

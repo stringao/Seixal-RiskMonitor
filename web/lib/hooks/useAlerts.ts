@@ -13,14 +13,15 @@ export function useAlerts(filters: AlertFilters = {}) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
-  const load = useCallback(async (pageToLoad: number = 1, append: boolean = false) => {
+  const load = useCallback(async (pageToLoad: number, size: number, append: boolean = false) => {
     if (append) setLoadingMore(true);
     else setLoading(true);
     setError(null);
 
     try {
-      const res = await fetchAlerts({ ...filters, page: pageToLoad, pageSize: 20 });
+      const res = await fetchAlerts({ ...filters, page: pageToLoad, pageSize: size });
       setData(prev => {
         if (append && prev) {
           return { ...res, items: [...prev.items, ...res.items] };
@@ -35,40 +36,60 @@ export function useAlerts(filters: AlertFilters = {}) {
     }
   }, [filters]);
 
+  // Initial load and reload when filters change
   useEffect(() => {
-    let active = true;
     setPage(1);
-    load(1, false);
+    load(1, pageSize, false);
+  }, [filters.severity, filters.isRead, pageSize]);
 
-    return () => {
-      active = false;
-    };
-  }, [filters.severity, filters.isRead]);
-
+  // Load more when page changes (pagination)
   useEffect(() => {
     if (page > 1) {
-      load(page, true);
+      load(page, pageSize, true);
     }
   }, [page]);
 
   const loadMore = useCallback(() => {
-    if (data && page * 20 < data.totalCount) {
+    if (data && page * pageSize < data.totalCount) {
       setPage(p => p + 1);
     }
-  }, [data, page]);
+  }, [data, page, pageSize]);
 
   const markRead = async (request: MarkAlertReadRequest) => {
     await markAlertsRead(request);
-    await load(1, false);
+    load(1, pageSize, false);
   };
 
   const refresh = useCallback(() => {
     setPage(1);
-    load(1, false);
-  }, [load]);
+    load(1, pageSize, false);
+  }, [load, pageSize]);
+
+  const changePageSize = useCallback((newSize: number) => {
+    setPageSize(newSize);
+    setPage(1);
+  }, []);
+
+  const changePage = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
 
   const unreadCount = data?.items.filter((a) => !a.isRead).length ?? 0;
-  const hasMore = data ? page * 20 < data.totalCount : false;
+  const hasMore = data ? page * pageSize < data.totalCount : false;
 
-  return { data, loading, loadingMore, error, unreadCount, markRead, refresh, loadMore, hasMore };
+  return {
+    data,
+    loading,
+    loadingMore,
+    error,
+    unreadCount,
+    markRead,
+    refresh,
+    loadMore,
+    hasMore,
+    page,
+    pageSize,
+    setPage: changePage,
+    setPageSize: changePageSize,
+  };
 }
