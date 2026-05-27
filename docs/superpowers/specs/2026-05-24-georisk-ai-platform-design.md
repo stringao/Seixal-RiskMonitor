@@ -151,10 +151,12 @@ Active provider configured via appsettings.json.
 - GET /api/insights/patterns
 
 ### Alerts
-- GET /api/alerts?severity=&isRead=
-- GET /api/alerts/{id}
-- PUT /api/alerts/{id}/read
-- POST /api/alerts/rules
+- `GET /api/alerts?page=&pageSize=&severity=&isRead=` (paginated, filtered)
+- `POST /api/alerts/read` (mark read)
+- `GET /api/alerts/rules`
+- `POST /api/alerts` (create/update rule)
+- `PATCH /api/alerts/{id}/toggle`
+- `DELETE /api/alerts/{id}`
 
 ### Health/Info
 - GET /api/health

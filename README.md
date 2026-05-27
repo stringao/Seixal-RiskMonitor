@@ -47,6 +47,12 @@ Plataforma full-stack de monitorização de riscos geográficos para o Concelho 
 - Buffer zones à volta de eventos críticos
 - Boundary do Concelho do Seixal (GeoJSON)
 - **Routing automático** de ocorrências para bombeiros via OSRM (estradas reais)
+- Mapa OpenStreetMap com tiles e маркеры
+
+### Dashboard de Eventos
+- Lista paginada de eventos (5, 10 ou 25 por página)
+- Detalhe de evento com mapa split + informações
+- Filtros por tipo, severidade e unread
 
 ### Análise Espacial (PostGIS)
 - Interseção entre eventos e zonas de risco
@@ -101,12 +107,15 @@ SeixalRiscalMonitor/
 │       └── BackgroundJobs/      # Import, Classification, Alerts
 ├── web/                         # Frontend Next.js
 │   ├── app/
+│   │   ├── (auth)/              # Login, Register
+│   │   ├── dashboard/           # Dashboard + events list/detail
+│   │   ├── alerts/              # Alerts + alert rules
+│   │   ├── insights/            # AI reports
+│   │   └── map/                 # Interactive map
 │   ├── components/
-│   │   └── map/                 # Componentes do mapa
-│   ├── lib/
-│   │   ├── routing/             # OSRM routing service
-│   │   └── types/               # TypeScript types
-│   └── lib/
+│   │   ├── map/                 # MapContainer, StaticMap
+│   │   ├── alerts/              # AlertList, AlertCard, AlertBadge
+│   │   └── ui/                  # Pagination, etc
 ├── scripts/
 │   └── setup-osrm-data.sh       # Script para preparar dados OSM
 ├── docker/
@@ -124,7 +133,7 @@ SeixalRiscalMonitor/
 | Events | `GET/POST /api/events`, `POST /api/events/import` |
 | Risk | `GET /api/risk/zones`, `/dashboard`, `POST /calculate` |
 | Insights | `POST /api/insights/classify/{id}`, `/report`, `GET /patterns` |
-| Alerts | `GET/PUT /api/alerts`, `POST /api/alerts/rules` |
+| Alerts | `GET /api/alerts?page=&pageSize=&severity=&isRead=` |
 
 ## Requisitos
 
