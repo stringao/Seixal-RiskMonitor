@@ -8,7 +8,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-[#050a0f] relative overflow-hidden">
+    <div className="flex h-screen bg-[#050a0f] relative overflow-hidden">
       {/* Grid background pattern */}
       <div
         className="absolute inset-0 opacity-[0.025] pointer-events-none"
@@ -37,11 +37,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         }}
       />
 
-      {/* Sidebar */}
+      {/* Sidebar - fixed height, fixed position */}
       <Sidebar />
 
-      {/* Main content area */}
-      <div className="relative z-10 flex-1 flex flex-col min-w-0">
+      {/* Main content area - scrollable */}
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-hidden">
         <main className="flex-1 overflow-hidden">
           <div className="animate-fade-in h-full">
             {children}

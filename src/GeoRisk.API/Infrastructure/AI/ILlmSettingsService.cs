@@ -9,5 +9,6 @@ public sealed record LlmSettings(
     string Provider,
     string ApiKey,
     string ModelName,
+    string? BaseUrl,
     int MaxTokens,
     bool IsConfigured);

@@ -80,16 +80,22 @@ try
     builder.Services.AddHostedService<ReportGenerationJob>();
     builder.Services.AddHostedService<AlertEvaluationJob>();
 
-    // AI/LLM providers
-    var llmProvider = builder.Configuration.GetSection("LLM")["Provider"] ?? "OpenAI";
-    if (llmProvider == "Anthropic")
-    {
-        builder.Services.AddHttpClient<ILlmProvider, AnthropicProvider>();
-    }
-    else
-    {
-        builder.Services.AddHttpClient<ILlmProvider, OpenAIProvider>();
-    }
+    // AI/LLM providers - read from database at runtime
+    builder.Services.AddScoped<OllamaProvider>(sp =>
+        new OllamaProvider(new HttpClient(), sp.GetRequiredService<ILlmSettingsService>()));
+    builder.Services.AddScoped<DeepSeekProvider>(sp =>
+        new DeepSeekProvider(new HttpClient(), sp.GetRequiredService<ILlmSettingsService>()));
+    builder.Services.AddScoped<QwenProvider>(sp =>
+        new QwenProvider(new HttpClient(), sp.GetRequiredService<ILlmSettingsService>()));
+    builder.Services.AddScoped<AnthropicProvider>(sp =>
+        new AnthropicProvider(new HttpClient(), sp.GetRequiredService<ILlmSettingsService>()));
+    builder.Services.AddScoped<OpenAIProvider>(sp =>
+        new OpenAIProvider(new HttpClient(), sp.GetRequiredService<ILlmSettingsService>()));
+    builder.Services.AddScoped<LlmProviderFactory>();
+    builder.Services.AddScoped<ILlmProvider>(sp => sp.GetRequiredService<LlmProviderFactory>());
+
+    // LLM settings service (for provider configs)
+    builder.Services.AddScoped<ILlmSettingsService, LlmSettingsService>();
 
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>

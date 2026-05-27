@@ -18,12 +18,13 @@ public sealed record DetectedPattern(
 
 public sealed class DetectPatternsHandler(
     GeoRiskDbContext db,
-    ILlmProvider llm) : IQueryHandler<DetectPatternsCommand, DetectPatternsResult>
+    ILlmProvider llm,
+    ILlmSettingsService settingsService) : IQueryHandler<DetectPatternsCommand, DetectPatternsResult>
 {
     public async Task<DetectPatternsResult> HandleAsync(DetectPatternsCommand cmd, CancellationToken ct)
     {
-        var settings = await db.AppSettings.FirstOrDefaultAsync(ct);
-        if (settings == null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        var settings = await settingsService.GetSettingsAsync(ct);
+        if (!settings.IsConfigured)
         {
             return new DetectPatternsResult(new List<DetectedPattern>());
         }
@@ -48,7 +49,10 @@ public sealed class DetectPatternsHandler(
                 p.Title,
                 p.Description,
                 p.Confidence,
-                p.AffectedEventIds,
+                p.AffectedEventIds
+                    .Where(id => Guid.TryParse(id, out _))
+                    .Select(Guid.Parse)
+                    .ToList(),
                 p.Recommendation)).ToList());
     }
 
@@ -57,7 +61,7 @@ public sealed class DetectPatternsHandler(
         string Title,
         string Description,
         double Confidence,
-        List<Guid> AffectedEventIds,
+        List<string> AffectedEventIds,
         string Recommendation);
 }
 
@@ -66,10 +70,19 @@ public static class DetectPatternsEndpoint
     public static RouteGroupBuilder MapDetectPatterns(this RouteGroupBuilder group)
     {
         group.MapGet("/patterns", async (
-            IQueryHandler<DetectPatternsCommand, DetectPatternsResult> handler) =>
+            IQueryHandler<DetectPatternsCommand, DetectPatternsResult> handler,
+            ILogger<DetectPatternsHandler> logger) =>
         {
-            var result = await handler.HandleAsync(new DetectPatternsCommand(), default);
-            return Results.Ok(result);
+            try
+            {
+                var result = await handler.HandleAsync(new DetectPatternsCommand(), default);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Patterns endpoint error");
+                return Results.Json(new { error = ex.Message, type = ex.GetType().Name }, statusCode: 500);
+            }
         }).RequireAuthorization("AnalystOrAdmin").WithTags("Insights");
         return group;
     }

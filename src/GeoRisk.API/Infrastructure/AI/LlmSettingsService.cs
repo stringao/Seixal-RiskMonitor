@@ -7,23 +7,44 @@ public sealed class LlmSettingsService(GeoRiskDbContext db) : ILlmSettingsServic
 {
     public async Task<LlmSettings> GetSettingsAsync(CancellationToken ct = default)
     {
-        var settings = await db.AppSettings.FirstOrDefaultAsync(ct);
+        var appSettings = await db.AppSettings.FirstOrDefaultAsync(ct);
+        var activeProvider = appSettings?.ActiveProvider ?? "DeepSeek";
 
-        if (settings == null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        var providerConfig = await db.AiProviderConfigs
+            .FirstOrDefaultAsync(p => p.Provider == activeProvider, ct);
+
+        if (providerConfig == null)
         {
             return new LlmSettings(
-                Provider: "OpenAI",
+                Provider: activeProvider,
                 ApiKey: "",
-                ModelName: "gpt-4o",
+                ModelName: "deepseek-chat",
+                BaseUrl: null,
                 MaxTokens: 1024,
                 IsConfigured: false);
         }
 
+        // For Ollama, we check IsEnabled and BaseUrl instead of ApiKey
+        if (activeProvider == "Ollama")
+        {
+            var isConfigured = providerConfig.IsEnabled && !string.IsNullOrWhiteSpace(providerConfig.BaseUrl);
+            return new LlmSettings(
+                Provider: providerConfig.Provider,
+                ApiKey: "",
+                ModelName: providerConfig.Model,
+                BaseUrl: providerConfig.BaseUrl,
+                MaxTokens: providerConfig.MaxTokens,
+                IsConfigured: isConfigured);
+        }
+
+        // For other providers, check ApiKey
+        var hasApiKey = !string.IsNullOrWhiteSpace(providerConfig.ApiKey);
         return new LlmSettings(
-            Provider: settings.LlmProvider,
-            ApiKey: settings.ApiKey,
-            ModelName: settings.ModelName,
-            MaxTokens: settings.MaxTokens,
-            IsConfigured: true);
+            Provider: providerConfig.Provider,
+            ApiKey: providerConfig.ApiKey,
+            ModelName: providerConfig.Model,
+            BaseUrl: providerConfig.BaseUrl,
+            MaxTokens: providerConfig.MaxTokens,
+            IsConfigured: hasApiKey);
     }
 }

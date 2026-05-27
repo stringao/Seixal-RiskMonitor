@@ -1,6 +1,7 @@
 using System.Text.Json;
 using GeoRisk.API.Common.CQRS;
 using GeoRisk.API.Features.Alerts.Dto;
+using GeoRisk.API.Infrastructure.Cache;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeoRisk.API.Features.Alerts;
@@ -9,8 +10,9 @@ public sealed record MarkAlertReadCommand(
     List<Guid>? AlertIds,
     bool MarkAllRead) : ICommand<MarkAlertReadResponse>;
 
-public sealed class MarkAlertReadHandler(GeoRiskDbContext db)
-    : ICommandHandler<MarkAlertReadCommand, MarkAlertReadResponse>
+public sealed class MarkAlertReadHandler(
+    GeoRiskDbContext db,
+    ICacheService cache) : ICommandHandler<MarkAlertReadCommand, MarkAlertReadResponse>
 {
     public async Task<MarkAlertReadResponse> HandleAsync(MarkAlertReadCommand command, CancellationToken ct)
     {
@@ -18,17 +20,18 @@ public sealed class MarkAlertReadHandler(GeoRiskDbContext db)
         {
             await db.Alerts.Where(a => !a.IsRead).ExecuteUpdateAsync(
                 setters => setters.SetProperty(a => a.IsRead, true), ct);
-            return new MarkAlertReadResponse(await db.Alerts.CountAsync(a => a.IsRead, ct));
         }
-
-        if (command.AlertIds is not null && command.AlertIds.Count != 0)
+        else if (command.AlertIds is not null && command.AlertIds.Count != 0)
         {
             await db.Alerts.Where(a => command.AlertIds.Contains(a.Id) && !a.IsRead)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.IsRead, true), ct);
-            return new MarkAlertReadResponse(command.AlertIds.Count);
         }
 
-        return new MarkAlertReadResponse(0);
+        // Invalidate cache after updates
+        await cache.RemoveByPrefixAsync("alerts:", ct);
+
+        var count = await db.Alerts.CountAsync(a => a.IsRead, ct);
+        return new MarkAlertReadResponse(count);
     }
 }
 

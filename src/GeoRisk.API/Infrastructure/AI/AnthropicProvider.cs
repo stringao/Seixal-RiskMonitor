@@ -1,45 +1,41 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Configuration;
 
 namespace GeoRisk.API.Infrastructure.AI;
 
 public class AnthropicProvider : ILlmProvider
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
+    private readonly ILlmSettingsService _settingsService;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public AnthropicProvider(HttpClient httpClient, IConfiguration configuration)
+    public AnthropicProvider(HttpClient httpClient, ILlmSettingsService settingsService)
     {
         _httpClient = httpClient;
-        _apiKey = configuration.GetSection("Anthropic")["ApiKey"] ?? "";
-    }
-
-    private void EnsureApiKey()
-    {
-        if (string.IsNullOrWhiteSpace(_apiKey))
-            throw new InvalidOperationException("Anthropic:ApiKey is not configured");
+        _settingsService = settingsService;
     }
 
     public async Task<string> CompleteAsync(string system, string user, CancellationToken ct = default)
     {
+        var settings = await _settingsService.GetSettingsAsync(ct);
+        if (!settings.IsConfigured)
+            throw new InvalidOperationException("Anthropic API is not configured. Please add your API key in Settings.");
+
         var request = new
         {
-            model = "claude-sonnet-4-20250514",
-            max_tokens = 1024,
+            model = settings.ModelName,
+            max_tokens = settings.MaxTokens,
             system,
             messages = new[] { new { role = "user", content = user } }
         };
 
-        EnsureApiKey();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
-        req.Headers.Add("x-api-key", _apiKey);
+        req.Headers.Add("x-api-key", settings.ApiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");
         req.Content = JsonContent.Create(request);
 
@@ -51,18 +47,21 @@ public class AnthropicProvider : ILlmProvider
 
     public async Task<T> CompleteStructuredAsync<T>(string system, string user, CancellationToken ct = default) where T : class
     {
+        var settings = await _settingsService.GetSettingsAsync(ct);
+        if (!settings.IsConfigured)
+            throw new InvalidOperationException("Anthropic API is not configured. Please add your API key in Settings.");
+
         var request = new
         {
-            model = "claude-sonnet-4-20250514",
-            max_tokens = 1024,
+            model = settings.ModelName,
+            max_tokens = settings.MaxTokens,
             system,
             messages = new[] { new { role = "user", content = user } },
             response_format = new { type = "json_object" }
         };
 
-        EnsureApiKey();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
-        req.Headers.Add("x-api-key", _apiKey);
+        req.Headers.Add("x-api-key", settings.ApiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");
         req.Content = JsonContent.Create(request);
 

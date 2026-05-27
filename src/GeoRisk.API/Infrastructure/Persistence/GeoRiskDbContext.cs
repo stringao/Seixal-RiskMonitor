@@ -10,6 +10,7 @@ public class GeoRiskDbContext(DbContextOptions<GeoRiskDbContext> options) : DbCo
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<FireStation> FireStations => Set<FireStation>();
+    public DbSet<AiProviderConfig> AiProviderConfigs => Set<AiProviderConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,6 +34,12 @@ public class GeoRiskDbContext(DbContextOptions<GeoRiskDbContext> options) : DbCo
                 fireStation.UpdatedAt = DateTime.UtcNow;
                 if (entry.State == EntityState.Added)
                     fireStation.CreatedAt = DateTime.UtcNow;
+            }
+            if (entry.Entity is AiProviderConfig config)
+            {
+                config.UpdatedAt = DateTime.UtcNow;
+                if (entry.State == EntityState.Added)
+                    config.CreatedAt = DateTime.UtcNow;
             }
         }
 

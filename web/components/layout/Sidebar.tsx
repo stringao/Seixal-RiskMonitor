@@ -68,7 +68,7 @@ export function Sidebar({ unreadAlertCount = 0 }: { unreadAlertCount?: number })
 
   return (
     <aside
-      className={`min-h-screen bg-[#080d14]/95 backdrop-blur-md border-r border-slate-800/70 flex flex-col transition-all duration-300 ${
+      className={`h-screen bg-[#080d14]/95 backdrop-blur-md border-r border-slate-800/70 flex flex-col transition-all duration-300 shrink-0 ${
         collapsed ? "w-20" : "w-64"
       }`}
     >

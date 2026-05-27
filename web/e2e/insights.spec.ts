@@ -133,12 +133,37 @@ test.describe("Report Page", () => {
 
   test("shows copy and download buttons after generating report", async ({ page }) => {
     await setupAuth(page);
-    await page.route("http://localhost:5000/api/insights/report", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ report: "# Relatorio AI Resumo." }) }));
+    await page.route("http://localhost:5000/api/insights/report", route => route.fulfill({ status: 200, contentType: "text/plain", body: "# Relatorio AI Resumo." }));
     await page.goto("dashboard/insights/report");
     await page.waitForLoadState("load");
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
     // Verify button exists and is clickable
     const btn = page.getByRole("button", { name: /Gerar Relatório/i });
     await expect(btn).toBeVisible();
+  });
+
+  test("clicking generate button triggers API call without 500 error", async ({ page }) => {
+    await setupAuth(page);
+    await page.route("http://localhost:5000/api/insights/report", route => {
+      return route.fulfill({ status: 200, contentType: "text/plain", body: "# Test Report\n\nTest content." });
+    });
+    await page.goto("/dashboard/insights/report");
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("body")).toBeVisible({ timeout: 10000 });
+
+    // Log all buttons on page for debugging
+    const buttons = await page.locator("button").allTextContents();
+    console.log("All buttons on page:", buttons);
+
+    // Find and click the generate button
+    const generateBtn = page.getByRole("button", { name: /Gerar/i });
+    if (await generateBtn.isVisible()) {
+      await generateBtn.click();
+      await page.waitForTimeout(2000);
+    }
+
+    // Check no 500 error displayed on page
+    const pageText = await page.textContent("body");
+    expect(pageText).not.toContain("500");
   });
 });

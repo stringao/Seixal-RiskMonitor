@@ -15,7 +15,7 @@ const MapContainer = dynamic(() => import('@/components/map/MapContainer'), {
 export default function MapPage() {
   return (
     <AppLayout>
-      <div className="h-[calc(100vh-3.5rem)] overflow-hidden">
+      <div className="h-full overflow-hidden">
         <MapContainer />
       </div>
     </AppLayout>

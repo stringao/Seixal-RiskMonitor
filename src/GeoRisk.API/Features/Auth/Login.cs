@@ -56,10 +56,17 @@ public static class LoginEndpoint
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
             };
-            var query = await JsonSerializer.DeserializeAsync<LoginQuery>(http.Request.Body, jsonOptions);
-            if (query is null) return Results.BadRequest(new { error = "Request body is required" });
-            var result = await handler.HandleAsync(query, default);
-            return Results.Ok(result);
+            try
+            {
+                var query = await JsonSerializer.DeserializeAsync<LoginQuery>(http.Request.Body, jsonOptions);
+                if (query is null) return Results.BadRequest(new { error = "Request body is required" });
+                var result = await handler.HandleAsync(query, default);
+                return Results.Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: 401);
+            }
         });
 
         return group;

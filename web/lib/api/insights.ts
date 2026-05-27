@@ -16,13 +16,9 @@ export async function classifyIncident(eventId: string): Promise<ClassifyInciden
   return data;
 }
 
-export interface GenerateReportResult {
-  report: string;
-}
-
 export async function generateReport(from: string, to: string): Promise<string> {
-  const { data } = await apiClient.get<GenerateReportResult>(`/insights/report?from=${from}&to=${to}`);
-  return data.report;
+  const response = await apiClient.get<string>(`/insights/report?from=${from}&to=${to}`);
+  return response.data;
 }
 
 export interface DetectedPattern {

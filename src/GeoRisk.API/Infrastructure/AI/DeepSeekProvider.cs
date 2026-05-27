@@ -4,7 +4,11 @@ using System.Text.Json.Serialization;
 
 namespace GeoRisk.API.Infrastructure.AI;
 
-public class OpenAIProvider : ILlmProvider
+/// <summary>
+/// DeepSeek AI provider - primary LLM for production use
+/// Uses OpenAI-compatible API format
+/// </summary>
+public class DeepSeekProvider : ILlmProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ILlmSettingsService _settingsService;
@@ -14,7 +18,7 @@ public class OpenAIProvider : ILlmProvider
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public OpenAIProvider(HttpClient httpClient, ILlmSettingsService settingsService)
+    public DeepSeekProvider(HttpClient httpClient, ILlmSettingsService settingsService)
     {
         _httpClient = httpClient;
         _settingsService = settingsService;
@@ -24,7 +28,7 @@ public class OpenAIProvider : ILlmProvider
     {
         var settings = await _settingsService.GetSettingsAsync(ct);
         if (!settings.IsConfigured)
-            throw new InvalidOperationException("OpenAI API is not configured. Please add your API key in Settings.");
+            throw new InvalidOperationException("DeepSeek API is not configured. Please add your API key in Settings.");
 
         var request = new
         {
@@ -36,13 +40,17 @@ public class OpenAIProvider : ILlmProvider
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.deepseek.com/v1/chat/completions");
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
         var response = await _httpClient.SendAsync(req, ct);
-        var result = await response.Content.ReadFromJsonAsync<OpenAIResponse>(ct);
+        var text = await response.Content.ReadAsStringAsync(ct);
 
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"DeepSeek API error ({response.StatusCode}): {text}");
+
+        var result = JsonSerializer.Deserialize<DeepSeekResponse>(text, JsonOptions);
         return result?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
     }
 
@@ -50,7 +58,7 @@ public class OpenAIProvider : ILlmProvider
     {
         var settings = await _settingsService.GetSettingsAsync(ct);
         if (!settings.IsConfigured)
-            throw new InvalidOperationException("OpenAI API is not configured. Please add your API key in Settings.");
+            throw new InvalidOperationException("DeepSeek API is not configured. Please add your API key in Settings.");
 
         var request = new
         {
@@ -63,16 +71,20 @@ public class OpenAIProvider : ILlmProvider
             response_format = new { type = "json_object" }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.deepseek.com/v1/chat/completions");
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
         req.Content = JsonContent.Create(request);
 
         var response = await _httpClient.SendAsync(req, ct);
         var text = await response.Content.ReadAsStringAsync(ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"DeepSeek API error ({response.StatusCode}): {text}");
+
         return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize response");
     }
 
-    private record OpenAIResponse(List<OpenAIChoice>? Choices);
-    private record OpenAIChoice(OpenAIMessage? Message);
-    private record OpenAIMessage(string Content);
+    private record DeepSeekResponse(List<DeepSeekChoice>? Choices);
+    private record DeepSeekChoice(DeepSeekMessage? Message);
+    private record DeepSeekMessage(string Content);
 }

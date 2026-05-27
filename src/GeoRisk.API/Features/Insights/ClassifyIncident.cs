@@ -17,12 +17,13 @@ public sealed record ClassifyIncidentResult(
 
 public sealed class ClassifyIncidentHandler(
     GeoRiskDbContext db,
-    ILlmProvider llm) : ICommandHandler<ClassifyIncidentCommand, ClassifyIncidentResult>
+    ILlmProvider llm,
+    ILlmSettingsService settingsService) : ICommandHandler<ClassifyIncidentCommand, ClassifyIncidentResult>
 {
     public async Task<ClassifyIncidentResult> HandleAsync(ClassifyIncidentCommand cmd, CancellationToken ct)
     {
-        var settings = await db.AppSettings.FirstOrDefaultAsync(ct);
-        if (settings == null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        var settings = await settingsService.GetSettingsAsync(ct);
+        if (!settings.IsConfigured)
         {
             throw new InvalidOperationException("AI features are not configured. Please configure the API key in Settings.");
         }

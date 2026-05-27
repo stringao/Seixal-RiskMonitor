@@ -34,6 +34,15 @@ services:
       - ConnectionStrings__DefaultConnection=Host=georisk-db;Database=georisk;Username=georisk;Password=${DB_PASSWORD:-georisk_dev_2024}
       - Redis__ConnectionString=georisk-redis:6379
       - ASPNETCORE_ENVIRONMENT=Development
+      - LLM__Provider=${LLM_PROVIDER:-Ollama}
+      - DeepSeek__ApiKey=${DEEPSEEK_API_KEY:-}
+      - DeepSeek__Model=${DEEPSEEK_MODEL:-deepseek-chat}
+      - Ollama__BaseUrl=${OLLAMA_BASE_URL:-http://ollama:11434/v1}
+      - Ollama__Model=${OLLAMA_MODEL:-qwen3:8b}
+      - Qwen__ApiKey=${QWEN_API_KEY:-}
+      - Qwen__Model=${QWEN_MODEL:-qwen-turbo}
+      - Anthropic__ApiKey=${ANTHROPIC_API_KEY:-}
+      - OpenAI__ApiKey=${OPENAI_API_KEY:-}
     depends_on:
       georisk-db:
         condition: service_healthy
@@ -48,17 +57,18 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NEXT_PUBLIC_OSRM_URL=http://localhost:5001
     depends_on:
       georisk-api:
         condition: service_started
 
-  sonarqube:
+  georisk-sonarqube:
     image: sonarqube:community
     ports:
       - "9001:9000"
     environment:
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
-      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_URL: jdbc:postgresql://georisk-sonarqube-db:5432/sonar
       SONAR_JDBC_USERNAME: sonar
       SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar_pass}
     volumes:
@@ -66,7 +76,7 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
     depends_on:
-      sonarqube-db:
+      georisk-sonarqube-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status || exit 1"]
@@ -74,7 +84,7 @@ services:
       retries: 10
       start_period: 60s
 
-  sonarqube-db:
+  georisk-sonarqube-db:
     image: postgres:17-alpine
     environment:
       POSTGRES_DB: sonar
@@ -90,7 +100,7 @@ services:
   # OSRM - Open Source Routing Machine (self-hosted)
   # Uses OpenStreetMap data for real road routing
   # IMPORTANT: Run scripts/setup-osrm-data.sh first to download and process Portugal OSM data
-  osrm:
+  georisk-osrm:
     image: osrm/osrm-backend
     ports:
       - "5001:5000"
@@ -103,9 +113,21 @@ services:
       retries: 3
       start_period: 2m
 
+  # Ollama - Self-hosted LLM (Qwen, Llama, Mistral, etc)
+  # No API key needed - runs locally with GPU support
+  georisk-ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles:
+      - ai
+
 volumes:
   pgdata:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
   sonarqube_db:
+  ollama_data:
