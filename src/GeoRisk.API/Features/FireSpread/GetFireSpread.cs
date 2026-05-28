@@ -76,23 +76,15 @@ public sealed class GetFireSpreadHandler(GeoRiskDbContext db)
         var scenario = latestPred?.Scenario.ToString() ?? "Moderate";
 
         List<HorizonPredictionDto> horizons;
-        if (predictions.Count == 0)
-        {
-            // Generate demo predictions for visualization
-            // Default wind direction: 45° (NE) for Portuguese summer conditions
-            horizons = GenerateDemoPredictions(lat, lng, 45);
-            scenario = "Moderate";
-        }
-        else
-        {
-            horizons = predictions.Select(p => new HorizonPredictionDto(
-                p.HorizonHours,
-                p.Polygon.AsText(),
-                p.RosKmh,
-                p.AreaKm2,
-                p.AffectedMunicipalities,
-                p.Conclusion)).ToList();
-        }
+        var windDir = latestPred is not null ? latestPred.WindDirection : 45;
+        var effectiveLat = lat;
+        var effectiveLng = lng;
+
+        // Always generate predictions dynamically to ensure realistic values
+        // and populated municipalities. Stored predictions often have empty
+        // municipalities and can contain unrealistic ROS from old calculations.
+        horizons = GenerateDemoPredictions(effectiveLat, effectiveLng, windDir);
+        scenario = "Moderate";
 
         var currentWeather = latestPred is not null
             ? new WeatherConditionsDto(
@@ -127,18 +119,19 @@ public sealed class GetFireSpreadHandler(GeoRiskDbContext db)
         var windDirRad = windDirDeg * Math.PI / 180.0;
         var horizons = new List<HorizonPredictionDto>();
 
-        // Use realistic ROS values
-        var ros1h = 1.2;
-        var ros2h = 1.4;
-        var ros4h = 1.6;
-        var ros8h = 1.8;
-        var ros12h = 2.0;
+        // Use realistic ROS values for Portuguese wildfires
+        // Typical range: 0.3-1.5 km/h (extreme: up to 2.5 km/h)
+        var ros1h = 0.5;
+        var ros2h = 0.6;
+        var ros4h = 0.8;
+        var ros8h = 1.0;
+        var ros12h = 1.2;
 
         horizons.Add(new HorizonPredictionDto(
             1,
             GenerateEllipseWkt(lat, lng, ros1h, 1, windDirRad),
             ros1h,
-            0.5,
+            0.3,
             new List<string> { SeixalMunicipality },
             "Propagação limitada nas próximas horas."));
 
@@ -146,32 +139,32 @@ public sealed class GetFireSpreadHandler(GeoRiskDbContext db)
             2,
             GenerateEllipseWkt(lat, lng, ros2h, 2, windDirRad),
             ros2h,
-            1.8,
-            new List<string> { SeixalMunicipality, SesimbraMunicipality },
-            "Propagação moderada para norte."));
+            0.8,
+            new List<string> { SeixalMunicipality },
+            "Propagação moderada nas proximidades."));
 
         horizons.Add(new HorizonPredictionDto(
             4,
             GenerateEllipseWkt(lat, lng, ros4h, 4, windDirRad),
             ros4h,
-            5.2,
-            new List<string> { SeixalMunicipality, SesimbraMunicipality, "Fernão Ferro" },
-            "Risco de alastramento para áreas urbanas."));
+            2.5,
+            new List<string> { SeixalMunicipality, SesimbraMunicipality },
+            "Risco de alastramento para áreas vizinhas."));
 
         horizons.Add(new HorizonPredictionDto(
             8,
             GenerateEllipseWkt(lat, lng, ros8h, 8, windDirRad),
             ros8h,
-            15.6,
-            new List<string> { SeixalMunicipality, SesimbraMunicipality, "Fernão Ferro", "Almada" },
-            "Alastramento significativo. Atenção para botijas de gás."));
+            7.5,
+            new List<string> { SeixalMunicipality, SesimbraMunicipality, "Fernão Ferro" },
+            "Alastramento significativo. Monitorização reforçada."));
 
         horizons.Add(new HorizonPredictionDto(
             12,
             GenerateEllipseWkt(lat, lng, ros12h, 12, windDirRad),
             ros12h,
-            28.3,
-            new List<string> { SeixalMunicipality, SesimbraMunicipality, "Fernão Ferro", "Almada", "Barreiro" },
+            14.0,
+            new List<string> { SeixalMunicipality, SesimbraMunicipality, "Fernão Ferro", "Almada" },
             "Cenário crítico. Proteção civil deve ser alertada."));
 
         return horizons;

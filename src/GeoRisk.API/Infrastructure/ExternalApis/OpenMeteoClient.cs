@@ -130,7 +130,7 @@ public sealed class OpenMeteoClient : IOpenMeteoClient
     {
         try
         {
-            var url = $"https://api.open-meteo.com/v1/air-quality" +
+            var url = $"https://air-quality-api.open-meteo.com/v1/air-quality" +
                 $"?latitude={latitude}&longitude={longitude}" +
                 $"&hourly=pm10,pm2_5,nitrogen_dioxide,ozone,sulphur_dioxide,carbon_monoxide,dust,aerosol_optical_depth,grass_pollen,olive_pollen,alder_pollen,birch_pollen,mugwort_pollen,ragweed_pollen" +
                 $"&current=pm10,pm2_5,nitrogen_dioxide,ozone,sulphur_dioxide,carbon_monoxide,dust,aerosol_optical_depth,grass_pollen,olive_pollen,alder_pollen,birch_pollen,mugwort_pollen,ragweed_pollen" +

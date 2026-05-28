@@ -14,6 +14,7 @@ import { SeverityDistribution } from "@/components/dashboard/SeverityDistributio
 import { ActiveAlertsPanel } from "@/components/dashboard/ActiveAlertsPanel";
 import { SystemHealthWidget } from "@/components/dashboard/SystemHealthWidget";
 import { AirQualityPanel } from "@/components/environment/AirQualityPanel";
+import { MAP_CONFIG } from "@/lib/map/config";
 
 export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -22,9 +23,9 @@ export default function DashboardPage() {
   const { data: alertData, loading: alertsLoading } = useAlerts();
   const { data: jobsData } = useJobStatuses(refreshKey);
 
-  // Use Setúbal area coordinates (38.5, -8.9) as default per requirements
-  const { data: airQualityData, loading: airQualityLoading } = useAirQuality(38.5, -8.9);
-  const { data: pollenData, loading: pollenLoading } = usePollen(38.5, -8.9);
+  // Use Seixal coordinates as the monitoring point
+  const { data: airQualityData, loading: airQualityLoading } = useAirQuality(MAP_CONFIG.center.lat, MAP_CONFIG.center.lng);
+  const { data: pollenData, loading: pollenLoading } = usePollen(MAP_CONFIG.center.lat, MAP_CONFIG.center.lng);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);

@@ -9,7 +9,7 @@ public static class AirQualityEndpoints
 
     public static void MapAirQualityEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/environment")
+        var group = app.MapGroup("")
             .WithTags("Environment");
 
         group.MapGet("/air-quality/{lat:double}/{lon:double}", GetAirQuality)

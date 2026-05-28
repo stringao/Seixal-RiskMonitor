@@ -103,22 +103,25 @@ public sealed class FireSpreadCalculator
 
     /// <summary>
     /// Calculate Rate of Spread in km/h using ISI and environmental factors.
-    /// Based on FARSITE ROS formula: ROS = ISI × SlopeFactor × WindFactor × FuelFactor
+    /// Based on Canadian FWI system with realistic caps for Portuguese terrain.
+    /// Real Portuguese wildfire ROS: 0.3-2.0 km/h typical, up to 3.0 km/h extreme.
     /// </summary>
     public static double CalculateROS(FwiResult fwi, double windSpeedKmh, double windDirectionDegrees)
     {
         // ISI is the Initial Spread Index - base ROS without other factors
         var baseRos = fwi.ISI;
 
-        // Wind factor: higher wind = faster spread (diminishing returns at high speeds)
-        var windFactor = 1.0 + (windSpeedKmh / 30.0) * 0.20;
-        windFactor = Math.Min(windFactor, 2.5);
+        // Wind factor: higher wind = faster spread
+        // Realistic: wind contributes up to 1.8x multiplier
+        var windFactor = 1.0 + (windSpeedKmh / 40.0) * 0.30;
+        windFactor = Math.Min(windFactor, 1.8);
 
-        // ISI contribution to ROS (simplified FARSITE formula)
-        // ROS (km/h) = 0.067 * ISI^1.37 * wind_factor (approximation)
-        var ros = 0.067 * Math.Pow(baseRos, 1.37) * windFactor;
+        // ROS formula calibrated for Portuguese terrain
+        // Using lower exponent to avoid explosive growth at high ISI
+        var ros = 0.03 * Math.Pow(baseRos, 1.1) * windFactor;
 
-        return Math.Max(ros, 0.1); // minimum spread of 0.1 km/h
+        // Cap at realistic maximum for Portuguese wildfires
+        return Math.Clamp(ros, 0.1, 3.0); // min 0.1 km/h, max 3.0 km/h
     }
 
     /// <summary>
@@ -243,10 +246,10 @@ public sealed class FireSpreadCalculator
 
         return hours switch
         {
-            <= 1 => $"{scenarioLabel}: fogo cobre {areaKm2:F1} km² em {hours}h (ROS {ros:F1} km/h). Propagation moderada.{muniText}",
-            <= 4 => $"{scenarioLabel}: área de {areaKm2:F1} km² afetada em {hours}h. Potential for spread to nearby areas.{muniText}",
-            <= 8 => $"{scenarioLabel}: fogo abrange {areaKm2:F1} km² em {hours}h. Risk elevat for extended impact.{muniText}",
-            _ => $"{scenarioLabel}: scenario cr\u00edtico. {areaKm2:F1} km² em {hours}h. Evacua\u00e7\u00e3o preventiva recomendada.{muniText}"
+            <= 1 => $"{scenarioLabel}: fogo cobre {areaKm2:F1} km² em {hours}h (ROS {ros:F1} km/h). Propagação moderada.{muniText}",
+            <= 4 => $"{scenarioLabel}: área de {areaKm2:F1} km² afetada em {hours}h. Risco de propagação para áreas vizinhas.{muniText}",
+            <= 8 => $"{scenarioLabel}: fogo abrange {areaKm2:F1} km² em {hours}h. Risco elevado de impacto alargado.{muniText}",
+            _ => $"{scenarioLabel}: cenário crítico. {areaKm2:F1} km² em {hours}h. Evacuação preventiva recomendada.{muniText}"
         };
     }
 }

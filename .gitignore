@@ -103,3 +103,49 @@ Desktop.ini
 *.tmp
 *.temp
 test-evidence/
+
+# Debug / temp scripts
+debug_*.py
+test_*.py
+test_*.cs
+verify-password.js
+get-hash.js
+check-all-pages.js
+debug-insights.js
+test-api-direct.js
+test-ollama.js
+
+# Screenshots
+*.png
+!web/public/**/*.png
+
+# Data artifacts
+publish/
+SRTM_Portugal/
+srtm_processed/
+docker/osrm-data/
+
+# Playwright
+.playwright-cli/
+
+# SQL scripts (generated during dev)
+scripts/check_*.sql
+scripts/fix_*.sql
+scripts/find_*.sql
+scripts/generate-hash.js
+scripts/get_*.sql
+scripts/list_*.sql
+scripts/set_*.sql
+scripts/update_*.sql
+scripts/upgrade_*.sql
+scripts/verify-password.js
+scripts/test-api.ps1
+scripts/test-patterns.ps1
+scripts/test_ollama.py
+
+# Generic debug SQL
+scripts/query.sql
+
+# Web debug/temp
+web/proxy.ts
+web/*.spec.ts

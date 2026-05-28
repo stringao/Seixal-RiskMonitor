@@ -6,6 +6,7 @@ import { AirQualityCard } from "./AirQualityCard";
 import { PollenCard } from "./PollenCard";
 import { AirQualityChart } from "./AirQualityChart";
 import { HealthRiskBanner } from "./HealthRiskBanner";
+import { buildChartDataFromForecast } from "@/lib/types/environment";
 import type { AirQualityResponse, PollenResponse } from "@/lib/types/environment";
 
 interface AirQualityPanelProps {
@@ -75,7 +76,10 @@ export function AirQualityPanel({
           </div>
 
           {/* Chart */}
-          <AirQualityChart loading={loading} />
+          <AirQualityChart
+            data={airQualityData?.raw ? buildChartDataFromForecast(airQualityData.raw.forecast) : undefined}
+            loading={loading}
+          />
         </div>
       )}
     </div>

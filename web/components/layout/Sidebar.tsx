@@ -17,6 +17,7 @@ import {
   Flame,
   Activity,
   Mountain,
+  Wind,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { AlertBadge } from "@/components/alerts/AlertBadge";
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { href: "/terrain", label: "Terreno", icon: Mountain },
   { href: "/risk-zones", label: "Zonas de Risco", icon: Flame },
   { href: "/fire-spread", label: "Simulação Fogo", icon: Activity },
+  { href: "/air-quality", label: "Qualidade do Ar", icon: Wind },
   { href: "/insights", label: "Insights", icon: Shield },
   { href: "/alerts", label: "Alertas", icon: Bell },
 ];

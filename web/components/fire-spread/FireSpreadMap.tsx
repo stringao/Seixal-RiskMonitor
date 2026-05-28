@@ -65,18 +65,20 @@ function FireSpreadMapContents({ fireSpread, selectedHorizon, onHorizonChange }:
         </Tooltip>
       </Marker>
 
-      {fireSpread.horizons.map((prediction) => {
-        const hours = prediction.hours;
-        const color = HORIZON_COLORS[hours] || "#888888";
-        return (
-          <SpreadEllipse
-            key={hours}
-            prediction={prediction}
-            color={color}
-            onClick={() => onHorizonChange(hours)}
-          />
-        );
-      })}
+      {fireSpread.horizons
+        .filter((prediction) => prediction.hours === selectedHorizon)
+        .map((prediction) => {
+          const hours = prediction.hours;
+          const color = HORIZON_COLORS[hours] || "#888888";
+          return (
+            <SpreadEllipse
+              key={hours}
+              prediction={prediction}
+              color={color}
+              onClick={() => onHorizonChange(hours)}
+            />
+          );
+        })}
     </>
   );
 }
@@ -88,7 +90,6 @@ export function FireSpreadMap({ fireSpread, selectedHorizon, onHorizonChange }: 
       zoom={11}
       className="h-full w-full"
       zoomControl={true}
-      preferCanvas={true}
     >
       <FireSpreadMapContents
         fireSpread={fireSpread}
