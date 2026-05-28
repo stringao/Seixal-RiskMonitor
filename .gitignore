@@ -153,6 +153,16 @@ docs/screenshots/
 docs/Manual_Seixal_Risk_Monitor.pdf
 docs/manual-print.html
 
+# Claude Code
+.claude/
+
+# SonarQube
+.sonarqube/
+.scannerwork/
+
+# Production config (safety net)
+appsettings.Production.json
+
 # Web debug/temp
 web/proxy.ts
 web/*.spec.ts

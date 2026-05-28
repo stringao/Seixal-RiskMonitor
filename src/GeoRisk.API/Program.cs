@@ -47,7 +47,7 @@ try
         cfg.ReadFrom.Configuration(ctx.Configuration));
 
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Host=localhost;Database=georisk;Username=georisk;Password=ChangeMe_InProduction";
+        ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
 
     builder.Services.AddDbContext<GeoRiskDbContext>(options =>
         options.UseNpgsql(connectionString, npgsql =>
