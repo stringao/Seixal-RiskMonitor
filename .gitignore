@@ -146,6 +146,9 @@ scripts/test_ollama.py
 # Generic debug SQL
 scripts/query.sql
 
+# Screenshots (generated for docs)
+docs/screenshots/
+
 # Web debug/temp
 web/proxy.ts
 web/*.spec.ts
