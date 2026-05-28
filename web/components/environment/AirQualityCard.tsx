@@ -39,6 +39,17 @@ export function AirQualityCard({ data, loading }: AirQualityCardProps) {
   }
 
   const aqiLevel = data.aqiLevel;
+  if (!aqiLevel) {
+    return (
+      <div className="bg-gradient-to-br from-slate-800/90 to-slate-800/50 border border-slate-700/80 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Wind className="w-5 h-5 text-emerald-400" />
+          <span className="text-sm font-medium text-slate-300">Qualidade do Ar</span>
+        </div>
+        <p className="text-slate-400 text-sm">Dados não disponíveis</p>
+      </div>
+    );
+  }
   const aqiDots = Array.from({ length: 5 }, (_, i) => i < data.aqi);
 
   return (

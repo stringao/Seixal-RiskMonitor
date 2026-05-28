@@ -123,15 +123,15 @@ export default function AirQualityPage() {
               <div>
                 <div className="text-xs text-slate-400 uppercase tracking-wider">Índice Qualidade do Ar</div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-2xl font-bold text-white">{airQualityData.aqiLevel.label}</span>
-                  <span className="text-sm text-slate-400">({airQualityData.aqi}/5)</span>
+                  <span className="text-2xl font-bold text-white">{airQualityData?.aqiLevel?.label ?? "N/A"}</span>
+                  <span className="text-sm text-slate-400">({airQualityData?.aqi ?? 0}/5)</span>
                   <div className="flex gap-1 ml-2">
                     {Array.from({ length: 5 }, (_, i) => (
                       <div
                         key={i}
                         className="w-3 h-3 rounded-full"
                         style={{
-                          backgroundColor: i < airQualityData.aqi ? airQualityData.aqiLevel.color : "#334155",
+                          backgroundColor: i < airQualityData.aqi ? (airQualityData?.aqiLevel?.color ?? "#334155") : "#334155",
                         }}
                       />
                     ))}
@@ -161,7 +161,7 @@ export default function AirQualityPage() {
             <div className="w-px h-12 bg-slate-700/50 hidden md:block" />
 
             {/* Main Pollutant */}
-            {airQualityData.pollutants.length > 0 && (
+            {airQualityData.pollutants && airQualityData.pollutants.length > 0 && (
               <div>
                 <div className="text-xs text-slate-400 uppercase tracking-wider">Poluente Dominante</div>
                 <div className="flex items-center gap-2 mt-1">

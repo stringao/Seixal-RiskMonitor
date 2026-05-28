@@ -323,9 +323,34 @@ Os dados de qualidade do ar são obtidos em tempo real da **Open-Meteo Air Quali
 
 ## 10. Insights e Análises
 
-A página de Insights apresenta análises preditivas, tendências e relatórios automatizados sobre os riscos monitorizados.
+A página de Insights apresenta análises preditivas, tendências e relatórios automatizados sobre os riscos monitorizados, com duas tabs: **Padrões** (deteção automática de padrões por IA) e **Assistente** (análise conversational).
 
-![Insights](screenshots/15-insights.png)
+![Insights — Deteção de Padrões](screenshots/15-insights-patterns.png)
+
+### Funcionalidades
+
+#### 10.1 Deteção de Padrões por IA
+
+A tab **Padrões** utiliza IA para analisar eventos dos últimos 7 dias e identificar padrões temporais, espaciais e de severidade. Cada padrão apresenta:
+
+- **Tipo** — Temporal, Espacial, Sequencial ou Severidade
+- **Título** — Descrição descritiva do padrão identificado
+- **Confiança** — Score de 0-100% que indica a certeza da deteção
+- **Recomendação** — Ação sugerida com base no padrão
+
+#### 10.2 Assistente de Análise
+
+A tab **Assistente** permite fazer perguntas em linguagem natural sobre os dados de risco. O assistente responde com base no contexto acumulado e indica as fontes:
+
+![Insights — Assistente](screenshots/16-insights-assistant.png)
+
+![Insights — Resposta do Assistente](screenshots/16-insights-assistant-query.png)
+
+#### 10.3 Relatórios Automatizados
+
+A página de **Relatórios AI** (`/insights/report`) gera resumos markdown abrangentes sobre a atividade de eventos:
+
+![Insights — Relatório](screenshots/17-insights-report.png)
 
 ### Conteúdos
 

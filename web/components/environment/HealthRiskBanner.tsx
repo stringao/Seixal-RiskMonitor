@@ -66,7 +66,7 @@ export function HealthRiskBanner({
   if (!shouldShow || dismissed) return null;
 
   const severity = getSeverity(pollenLevel, pollenIndex);
-  const config = SEVERITY_CONFIG[severity];
+  const config = SEVERITY_CONFIG[severity] ?? SEVERITY_CONFIG.low;
 
   return (
     <div

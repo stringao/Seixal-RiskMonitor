@@ -299,7 +299,7 @@ def main():
     missing_count = html_body.count('[Imagem não encontrada')
     print(f"  Figures embedded: {fig_count}")
     if missing_count:
-        print(f"  ⚠ Images missing: {missing_count}")
+        print(f"  [!] Images missing: {missing_count}")
     print()
 
     # 3. Build full HTML document
