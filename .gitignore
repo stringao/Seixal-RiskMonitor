@@ -149,6 +149,10 @@ scripts/query.sql
 # Screenshots (generated for docs)
 docs/screenshots/
 
+# PDF manual (generated)
+docs/Manual_Seixal_Risk_Monitor.pdf
+docs/manual-print.html
+
 # Web debug/temp
 web/proxy.ts
 web/*.spec.ts

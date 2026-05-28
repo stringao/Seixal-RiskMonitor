@@ -1,0 +1,727 @@
+/* ==========================================================================
+   Seixal Risk Monitor — Professional PDF Stylesheet
+   For WeasyPrint / CSS Paged Media PDF Generation
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Custom Properties (for consistency)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Brand Colors */
+  --emerald: #10b981;
+  --emerald-dark: #059669;
+  --emerald-light: #d1fae5;
+  --slate-dark: #0f172a;
+  --slate-800: #1e293b;
+  --slate-600: #475569;
+  --slate-400: #94a3b8;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --white: #ffffff;
+
+  /* Typography Scale */
+  --font-body: Arial, Helvetica, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+
+  /* Font Sizes */
+  --size-cover-title: 42pt;
+  --size-h1: 26pt;
+  --size-h2: 20pt;
+  --size-h3: 16pt;
+  --size-h4: 13pt;
+  --size-body: 10.5pt;
+  --size-small: 9pt;
+  --size-caption: 9pt;
+
+  /* Spacing */
+  --leading-body: 1.5;
+  --leading-headings: 1.2;
+}
+
+/* --------------------------------------------------------------------------
+   Page Setup
+   -------------------------------------------------------------------------- */
+@page {
+  size: A4;
+  margin: 20mm 18mm;
+
+  /* Running headers */
+  @top-left {
+    content: string(header-title);
+    font-family: var(--font-body);
+    font-size: 8pt;
+    color: var(--slate-600);
+    vertical-align: bottom;
+    padding-bottom: 6mm;
+  }
+
+  @top-right {
+    content: "Seixal Risk Monitor";
+    font-family: var(--font-body);
+    font-size: 8pt;
+    color: var(--slate-600);
+    text-align: right;
+    vertical-align: bottom;
+    padding-bottom: 6mm;
+  }
+
+  @top-center {
+    content: "";
+    border-bottom: 1px solid var(--emerald);
+  }
+
+  /* Running footers */
+  @bottom-left {
+    content: "© 2026 Seixal Risk Monitor";
+    font-family: var(--font-body);
+    font-size: 8pt;
+    color: var(--slate-400);
+    vertical-align: top;
+    padding-top: 6mm;
+  }
+
+  @bottom-center {
+    content: counter(page);
+    font-family: var(--font-body);
+    font-size: 9pt;
+    font-weight: bold;
+    color: var(--slate-800);
+    padding-top: 6mm;
+  }
+
+  @bottom-right {
+    content: string(footer-date);
+    font-family: var(--font-body);
+    font-size: 8pt;
+    color: var(--slate-400);
+    text-align: right;
+    vertical-align: top;
+    padding-top: 6mm;
+  }
+}
+
+/* Cover page — no header/footer */
+@page :first {
+  margin: 0;
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-center { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Base Document Styles
+   -------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--size-body);
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+  color: var(--slate-800);
+  background: var(--white);
+}
+
+/* String markers for running headers/footers */
+h1, h2, h3, h4 {
+  string-set: header-title content();
+}
+
+/* --------------------------------------------------------------------------
+   Cover Page
+   -------------------------------------------------------------------------- */
+.cover-page {
+  background-color: var(--slate-dark);
+  color: var(--white);
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40mm;
+  margin-bottom: 0;
+  break-after: page;
+}
+
+.cover-page__badge {
+  font-size: var(--size-small);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--emerald);
+  margin-bottom: 20mm;
+  font-weight: bold;
+}
+
+.cover-page__title {
+  font-size: var(--size-cover-title);
+  font-weight: bold;
+  line-height: var(--leading-headings);
+  margin-bottom: 10mm;
+  color: var(--white);
+}
+
+.cover-page__accent-bar {
+  width: 80mm;
+  height: 4px;
+  background-color: var(--emerald);
+  margin: 0 auto 15mm;
+}
+
+.cover-page__subtitle {
+  font-size: 14pt;
+  color: var(--slate-400);
+  margin-bottom: 40mm;
+}
+
+.cover-page__meta {
+  font-size: var(--size-caption);
+  color: var(--slate-400);
+}
+
+.cover-page__meta span {
+  display: block;
+  margin-bottom: 4pt;
+}
+
+.cover-page__version {
+  color: var(--emerald);
+  font-weight: bold;
+}
+
+/* --------------------------------------------------------------------------
+   Typography
+   -------------------------------------------------------------------------- */
+h1 {
+  font-size: var(--size-h1);
+  font-weight: bold;
+  color: var(--slate-800);
+  margin-top: 0;
+  margin-bottom: 8mm;
+  line-height: var(--leading-headings);
+  border-bottom: 2px solid var(--emerald);
+  padding-bottom: 4mm;
+}
+
+h2 {
+  font-size: var(--size-h2);
+  font-weight: bold;
+  color: var(--slate-dark);
+  margin-top: 15mm;
+  margin-bottom: 6mm;
+  line-height: var(--leading-headings);
+  break-before: page;
+  string-set: header-title content();
+}
+
+h3 {
+  font-size: var(--size-h3);
+  font-weight: bold;
+  color: var(--slate-800);
+  margin-top: 10mm;
+  margin-bottom: 4mm;
+  line-height: var(--leading-headings);
+}
+
+h4 {
+  font-size: var(--size-h4);
+  font-weight: bold;
+  color: var(--slate-600);
+  margin-top: 8mm;
+  margin-bottom: 3mm;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 5mm;
+  text-align: justify;
+  orphans: 3;
+  widows: 3;
+}
+
+strong {
+  font-weight: bold;
+  color: var(--slate-dark);
+}
+
+em {
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   Links
+   -------------------------------------------------------------------------- */
+a {
+  color: var(--emerald-dark);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Lists
+   -------------------------------------------------------------------------- */
+ul, ol {
+  margin-top: 4mm;
+  margin-bottom: 6mm;
+  padding-left: 0;
+}
+
+li {
+  margin-bottom: 2mm;
+  padding-left: 8mm;
+  position: relative;
+}
+
+ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  background-color: var(--emerald);
+  border-radius: 50%;
+}
+
+ol {
+  counter-reset: list-counter;
+  list-style: none;
+}
+
+ol li {
+  counter-increment: list-counter;
+}
+
+ol li::before {
+  content: counter(list-counter) ".";
+  position: absolute;
+  left: 0;
+  color: var(--emerald);
+  font-weight: bold;
+}
+
+/* Nested lists */
+li ul, li ol {
+  margin-top: 2mm;
+  margin-bottom: 2mm;
+}
+
+li ul li::before {
+  background-color: var(--slate-400);
+  width: 4px;
+  height: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10mm;
+  font-size: var(--size-body);
+  /* Force table to stay together */
+  break-inside: avoid;
+}
+
+thead {
+  background-color: var(--emerald);
+  color: var(--white);
+}
+
+thead th {
+  font-weight: bold;
+  text-align: left;
+  padding: 4mm 3mm;
+  font-size: var(--size-small);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--slate-100);
+}
+
+tbody tr:nth-child(odd) {
+  background-color: var(--white);
+}
+
+tbody td {
+  padding: 3mm 3mm;
+  border: 1px solid var(--slate-200);
+  vertical-align: top;
+}
+
+tbody tr:hover {
+  background-color: var(--emerald-light);
+}
+
+/* Table caption */
+caption {
+  font-size: var(--size-caption);
+  font-style: italic;
+  color: var(--slate-600);
+  text-align: left;
+  padding: 2mm 0;
+  caption-side: bottom;
+}
+
+/* --------------------------------------------------------------------------
+   Code Blocks
+   -------------------------------------------------------------------------- */
+code {
+  font-family: var(--font-mono);
+  font-size: 9pt;
+  background-color: var(--slate-100);
+  padding: 1pt 3pt;
+  border-radius: 3px;
+  color: var(--slate-dark);
+}
+
+pre {
+  font-family: var(--font-mono);
+  font-size: 9pt;
+  background-color: var(--slate-100);
+  border: 1px solid var(--slate-200);
+  border-left: 4px solid var(--emerald);
+  border-radius: 4px;
+  padding: 6mm 8mm;
+  margin-bottom: 8mm;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Images & Figures
+   -------------------------------------------------------------------------- */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto 4mm;
+}
+
+figure {
+  margin: 8mm 0;
+  text-align: center;
+}
+
+figure img {
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+  background: var(--white);
+}
+
+figcaption {
+  font-size: var(--size-caption);
+  font-style: italic;
+  color: var(--slate-600);
+  margin-top: 3mm;
+}
+
+/* --------------------------------------------------------------------------
+   Blockquotes
+   -------------------------------------------------------------------------- */
+blockquote {
+  margin: 8mm 0;
+  padding: 5mm 8mm;
+  border-left: 4px solid var(--emerald);
+  background-color: var(--slate-100);
+  font-style: italic;
+  color: var(--slate-600);
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+blockquote cite {
+  display: block;
+  margin-top: 3mm;
+  font-size: var(--size-caption);
+  font-style: normal;
+  color: var(--slate-400);
+}
+
+/* --------------------------------------------------------------------------
+   Callout Boxes
+   -------------------------------------------------------------------------- */
+.callout {
+  margin: 8mm 0;
+  padding: 6mm 8mm;
+  border-left: 4px solid var(--emerald);
+  background-color: var(--emerald-light);
+}
+
+.callout--note {
+  border-left-color: var(--emerald);
+  background-color: var(--emerald-light);
+}
+
+.callout--warning {
+  border-left-color: #f59e0b;
+  background-color: #fef3c7;
+}
+
+.callout--danger {
+  border-left-color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.callout__title {
+  font-size: var(--size-small);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3mm;
+  color: var(--slate-dark);
+}
+
+.callout--note .callout__title { color: var(--emerald-dark); }
+.callout--warning .callout__title { color: #d97706; }
+.callout--danger .callout__title { color: #dc2626; }
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Section Breaks
+   -------------------------------------------------------------------------- */
+hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--emerald) 0%,
+    var(--emerald-light) 50%,
+    transparent 100%
+  );
+  margin: 12mm 0;
+}
+
+/* --------------------------------------------------------------------------
+   Table of Contents
+   -------------------------------------------------------------------------- */
+.toc {
+  margin-bottom: 15mm;
+  string-set: header-title content();
+}
+
+.toc__title {
+  font-size: var(--size-h2);
+  font-weight: bold;
+  color: var(--slate-dark);
+  margin-bottom: 8mm;
+  border-bottom: 2px solid var(--emerald);
+  padding-bottom: 4mm;
+}
+
+.toc__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc__list li {
+  padding: 2mm 0;
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
+.toc__list li::before {
+  display: none;
+}
+
+.toc__item {
+  flex-grow: 0;
+  color: var(--slate-dark);
+  font-weight: normal;
+}
+
+.toc__item--chapter {
+  font-weight: bold;
+  color: var(--slate-dark);
+}
+
+.toc__leaders {
+  flex-grow: 1;
+  border-bottom: 1px dotted var(--slate-400);
+  margin: 0 4mm;
+  align-self: baseline;
+  min-width: 20mm;
+}
+
+.toc__page {
+  flex-grow: 0;
+  text-align: right;
+  color: var(--slate-600);
+  font-size: var(--size-small);
+}
+
+.toc__sublist {
+  margin-left: 8mm;
+  margin-top: 1mm;
+}
+
+/* --------------------------------------------------------------------------
+   Chapter Pages (h2 sections)
+   -------------------------------------------------------------------------- */
+.chapter-header {
+  margin-bottom: 10mm;
+  padding-bottom: 6mm;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.chapter-number {
+  font-size: var(--size-small);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--emerald);
+  margin-bottom: 2mm;
+}
+
+/* --------------------------------------------------------------------------
+   Definition Lists
+   -------------------------------------------------------------------------- */
+dl {
+  margin-bottom: 8mm;
+}
+
+dt {
+  font-weight: bold;
+  color: var(--slate-dark);
+  margin-top: 5mm;
+}
+
+dd {
+  margin-left: 8mm;
+  color: var(--slate-600);
+}
+
+/* --------------------------------------------------------------------------
+   Page Numbering Override for Front Matter
+   -------------------------------------------------------------------------- */
+.front-matter {
+  counter-reset: page 1;
+}
+
+/* --------------------------------------------------------------------------
+   Two-Column Layout Support
+   -------------------------------------------------------------------------- */
+.two-columns {
+  column-count: 2;
+  column-gap: 10mm;
+}
+
+@media print {
+  .two-columns {
+    column-count: 2;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Footer Date String
+   -------------------------------------------------------------------------- */
+.footer-date::after {
+  content: string(footer-date);
+}
+
+h1 {
+  string-set: footer-date "28 de Maio de 2026";
+}
+
+h2 {
+  string-set: footer-date "28 de Maio de 2026";
+}
+
+/* Alternative: use CSS to set a fixed date */
+@page {
+  @bottom-right {
+    content: "28 de Maio de 2026";
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print Optimizations
+   -------------------------------------------------------------------------- */
+@media print {
+  /* Ensure page breaks don't leave widows */
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Keep headings with following content */
+  h1, h2, h3, h4 {
+    break-after: avoid;
+  }
+
+  /* Prevent page breaks inside these elements */
+  table, pre, figure, blockquote {
+    break-inside: avoid;
+  }
+
+  /* Remove hover effects */
+  a:hover {
+    text-decoration: none;
+  }
+
+  tbody tr:hover {
+    background-color: inherit;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Utility Classes
+   -------------------------------------------------------------------------- */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mt-small { margin-top: 3mm; }
+.mb-small { margin-bottom: 3mm; }
+
+.font-small { font-size: var(--size-small); }
+.font-caption { font-size: var(--size-caption); }
+
+.text-emerald { color: var(--emerald); }
+.text-slate { color: var(--slate-600); }
+.text-muted { color: var(--slate-400); }
+
+.bg-emerald { background-color: var(--emerald); }
+.bg-slate { background-color: var(--slate-100); }
+
+.page-break-before { break-before: page; }
+.keep-together { break-inside: avoid; }
+
+/* ==========================================================================
+   End of Stylesheet
+   ========================================================================== */
