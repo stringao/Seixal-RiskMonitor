@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Layers, X } from "lucide-react";
 import { MAP_CONFIG } from "@/lib/map/config";
 import { fetchSlopeVisualization, type SlopeVisualizationResponse } from "@/lib/api/risk";
@@ -46,7 +46,7 @@ interface SlopeLayerProps {
 
 function SlopeLayer({ data, visible }: SlopeLayerProps) {
   const map = useMap();
-  const layerRef = useRef<L.LayerGroup | null>(null);
+  const layerRef = useRef<L.GeoJSON | null>(null);
 
   useEffect(() => {
     // Clean up previous layer
@@ -57,38 +57,38 @@ function SlopeLayer({ data, visible }: SlopeLayerProps) {
 
     if (!visible || !data?.features?.length) return;
 
-    // Use canvas renderer for better performance with many points
-    const canvasRenderer = L.canvas({ padding: 0.5 });
-    const layerGroup = L.layerGroup().addTo(map);
-    layerRef.current = layerGroup;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const geoJsonLayer = L.geoJSON(data as any, {
+      pointToLayer: (feature, latlng) => {
+        const props = feature.properties as { slope: number; category: string };
+        const validCategory = isValidSlopeCategory(props.category) ? props.category : "flat";
+        const color = SLOPE_COLORS[validCategory];
+        return L.circleMarker(latlng, {
+          radius: 6,
+          color: color,
+          weight: 1,
+          opacity: 0.8,
+          fillColor: color,
+          fillOpacity: 0.5 + (props.slope / 90) * 0.4,
+        });
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties as { slope: number; category: string };
+        const validCategory = isValidSlopeCategory(props.category) ? props.category : "flat";
+        const color = SLOPE_COLORS[validCategory];
+        if (layer instanceof L.CircleMarker) {
+          layer.bindTooltip(
+            `<div style="font-family: system-ui, sans-serif; font-size: 12px;">
+              <strong>Declive:</strong> ${props.slope.toFixed(1)}°
+              <br/><span style="color: ${color};">${SLOPE_LABELS[validCategory]}</span>
+            </div>`,
+            { className: "slope-tooltip" }
+          );
+        }
+      },
+    }).addTo(map);
 
-    data.features.forEach((feature) => {
-      const { coordinates } = feature.geometry;
-      const { slope, category } = feature.properties;
-
-      // Use validated category
-      const validCategory = isValidSlopeCategory(category) ? category : "flat";
-      const color = SLOPE_COLORS[validCategory];
-
-      const marker = L.circleMarker([coordinates[1], coordinates[0]], {
-        renderer: canvasRenderer,
-        radius: 6,
-        color: color,
-        weight: 1,
-        opacity: 0.8,
-        fillColor: color,
-        fillOpacity: 0.5 + (slope / 90) * 0.4,
-      });
-
-      marker.bindTooltip(`
-        <div style="font-family: system-ui, sans-serif; font-size: 12px;">
-          <strong>Declive:</strong> ${slope.toFixed(1)}°
-          <br/><span style="color: ${color};">${SLOPE_LABELS[validCategory]}</span>
-        </div>
-      `, { className: "slope-tooltip" });
-
-      layerGroup.addLayer(marker);
-    });
+    layerRef.current = geoJsonLayer;
 
     return () => {
       // Cleanup is handled by next effect run or unmount
@@ -142,7 +142,6 @@ export function TerrainSlopeMap({ className = "" }: TerrainSlopeMapProps) {
         zoom={MAP_CONFIG.zoom}
         className="h-full w-full"
         zoomControl={true}
-        preferCanvas={true}
       >
         <TileLayer url={MAP_CONFIG.tileUrl} attribution={MAP_CONFIG.tileAttribution} />
         <SlopeLayer data={slopeData} visible={showSlope} />

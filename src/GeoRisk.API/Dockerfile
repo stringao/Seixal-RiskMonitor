@@ -17,13 +17,15 @@ WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
 
 # Install Kerberos/GSSAPI libs required by Npgsql PostgreSQL driver
+# Create symlink so 'python' works (some libraries look for 'python' not 'python3')
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgssapi-krb5-2 \
     libkrb5-3 \
     python3 \
     python3-pip \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --break-system-packages rasterio --no-cache-dir
+    python3-rasterio \
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 

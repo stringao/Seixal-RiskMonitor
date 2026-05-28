@@ -20,10 +20,10 @@ public sealed class SrtmTerrainService
     private readonly string _solarExposureFile;
 
     // Constants for sampling strategies (balances detail vs performance)
-    private const string PythonCommand = "python3";
+    private const string PythonCommand = "python";
     private const double NoDataValue = -32768.0;
     private const int HeatmapSampleStep = 10;
-    private const int SlopeVisualizationSampleStep = 20;
+    private const int SlopeVisualizationSampleStep = 40;
     private static readonly TimeSpan ProcessTimeout = TimeSpan.FromSeconds(60);
 
     public SrtmTerrainService(
@@ -296,16 +296,30 @@ except Exception as e:
 
         try
         {
+            // Use temp file to avoid buffer deadlock when writing large GeoJSON to stdout
+            var tempFileName = $"slope_viz.json";
+            var tempFile = Path.Combine(Path.GetTempPath(), tempFileName);
+            _logger.LogInformation("GetSlopeVisualizationAsync started, outputFile: {OutputFile}", tempFile);
+
             var script = $@"
+import sys
+sys.stderr.write('PYTHON: Starting slope visualization script\n')
+sys.stderr.flush()
+
 import rasterio
 import json
 
 path = r'{_slopeFile}'
+sys.stderr.write(f'PYTHON: path={{path}}\n')
+sys.stderr.flush()
+
 features = []
 
 try:
     with rasterio.open(path) as src:
         data = src.read(1)
+        sys.stderr.write(f'PYTHON: src opened, size={{src.width}}x{{src.height}}\n')
+        sys.stderr.flush()
         for i in range(0, src.height, {SlopeVisualizationSampleStep}):
             for j in range(0, src.width, {SlopeVisualizationSampleStep}):
                 val = data[i, j]
@@ -320,11 +334,19 @@ try:
                             'category': 'flat' if slope < 10 else 'moderate' if slope < 25 else 'steep' if slope < 40 else 'very_steep'
                         }}
                     }})
-    print(json.dumps({{'type': 'FeatureCollection', 'features': features}}))
+    sys.stderr.write(f'PYTHON: built {{len(features)}} features\n')
+    sys.stderr.flush()
+    with open(r'{tempFile}', 'w') as f:
+        json.dump({{'type': 'FeatureCollection', 'features': features}}, f)
+    sys.stderr.write(f'PYTHON: wrote to file\n')
+    sys.stderr.flush()
 except Exception as e:
-    print('{{}}')
+    sys.stderr.write(f'PYTHON: exception={{e}}\n')
+    sys.stderr.flush()
+    with open(r'{tempFile}', 'w') as f:
+        json.dump({{'type': 'FeatureCollection', 'features': []}}, f)
 ";
-            return await RunPythonScriptAsync(script);
+            return await RunPythonScriptAsync(script, tempFile);
         }
         catch (Exception ex)
         {
@@ -333,7 +355,7 @@ except Exception as e:
         }
     }
 
-    private async Task<string> RunPythonScriptAsync(string script)
+    private async Task<string> RunPythonScriptAsync(string script, string? outputFile = null)
     {
         // Create temp script file with guaranteed unique name (GetRandomFileName doesn't create the file)
         var tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) + ".py";
@@ -350,7 +372,7 @@ except Exception as e:
             var psi = new ProcessStartInfo
             {
                 FileName = PythonCommand,
-                Arguments = $"\"{tempFile}\"",
+                Arguments = tempFile,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -388,6 +410,28 @@ except Exception as e:
                 _logger.LogWarning("Python stderr: {Stderr}", stderr);
             }
 
+            // If outputFile was specified, read result from that file instead of stdout
+            if (!string.IsNullOrEmpty(outputFile))
+            {
+                _logger.LogInformation("Checking for outputFile: {OutputFile}, exists: {Exists}", outputFile, File.Exists(outputFile));
+                if (File.Exists(outputFile))
+                {
+                    try
+                    {
+                        var fileContent = await File.ReadAllTextAsync(outputFile);
+                        _logger.LogInformation("Read {Length} chars from outputFile", fileContent.Length);
+                        try { File.Delete(outputFile); } catch { /* best effort */ }
+                        return fileContent;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to read output file {OutputFile}", outputFile);
+                        return "{}";
+                    }
+                }
+            }
+
+            _logger.LogWarning("OutputFile was not found or empty, checking stdout");
             if (!string.IsNullOrEmpty(output) && output.Contains('{'))
             {
                 var start = output.IndexOf('{');

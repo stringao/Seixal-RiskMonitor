@@ -153,7 +153,7 @@ public static class TerrainEndpoints
             return Results.NotFound(new { error = "Failed to generate slope visualization" });
         }
 
-        return Results.Ok(geoJson);
+        return Results.Text(geoJson, "application/json");
     }
 
     /// <summary>
